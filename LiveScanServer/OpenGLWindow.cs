@@ -329,7 +329,7 @@ namespace KinectServer
                 {
                     bool bShowSkeletons = settings.bShowSkeletons;
 
-                    PointCount = vertices.Count / 3;
+                    PointCount = vertices.Count / 4;
                     LineCount = 0;
                     if (bDrawMarkings)
                     {
@@ -347,13 +347,13 @@ namespace KinectServer
 
                     for (int i = 0; i < PointCount; i++)
                     {
-                        VBO[i].R = (byte)Math.Max(0, Math.Min(255, (colors[i * 3] + brightnessModifier)));
-                        VBO[i].G = (byte)Math.Max(0, Math.Min(255, (colors[i * 3 + 1] + brightnessModifier)));
-                        VBO[i].B = (byte)Math.Max(0, Math.Min(255, (colors[i * 3 + 2] + brightnessModifier)));
+                        VBO[i].R = (byte)Math.Max(0, Math.Min(255, (colors[i * 4 + 0] + brightnessModifier)));
+                        VBO[i].G = (byte)Math.Max(0, Math.Min(255, (colors[i * 4 + 1] + brightnessModifier)));
+                        VBO[i].B = (byte)Math.Max(0, Math.Min(255, (colors[i * 4 + 2] + brightnessModifier)));
                         VBO[i].A = 255;
-                        VBO[i].Position.X = vertices[i * 3];
-                        VBO[i].Position.Y = vertices[i * 3 + 1];
-                        VBO[i].Position.Z = vertices[i * 3 + 2];
+                        VBO[i].Position.X = vertices[i * 4 + 0];
+                        VBO[i].Position.Y = vertices[i * 4 + 1];
+                        VBO[i].Position.Z = vertices[i * 4 + 2];
                     }
 
                     if (bDrawMarkings)

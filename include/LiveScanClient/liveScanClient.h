@@ -62,7 +62,7 @@ private:
 	SocketClient *m_pClientSocket;
 	std::vector<float> m_vBounds;
 
-	std::vector<Point3s> m_vLastFrameVertices;
+	std::vector<Point4s> m_vLastFrameVertices;
 	std::vector<RGB> m_vLastFrameRGB;
 	std::vector<Body> m_vLastFrameBody;
 
@@ -72,11 +72,16 @@ private:
     INT64 m_nNextStatusTime;
     DWORD m_nFramesSinceUpdate;	
 
-	Point3f* m_pCameraSpaceCoordinates;
-	Point2f* m_pColorCoordinatesOfDepth;
-	Point2f* m_pDepthCoordinatesOfColor;
+	Point3f* m_prev_pCameraSpaceCoordinates = NULL;
 
-    // Direct2D
+	Point3f* m_current_pCameraSpaceCoordinates = NULL;
+	Point2f* m_current_pColorCoordinatesOfDepth = NULL;
+
+	Point3f* m_next_pCameraSpaceCoordinates = NULL;
+	Point2f* m_next_pColorCoordinatesOfDepth = NULL;
+	Point2f* m_next_pDepthCoordinatesOfColor = NULL;
+	
+	// Direct2D
     ImageRenderer* m_pDrawColor;
     ID2D1Factory* m_pD2DFactory;
 	RGB* m_pDepthRGBX;
@@ -88,10 +93,10 @@ private:
     bool SetStatusMessage(_In_z_ WCHAR* szMessage, DWORD nShowTimeMsec, bool bForce);
 
 	void HandleSocket();
-	void SendFrame(vector<Point3s> vertices, vector<RGB> RGB, vector<Body> body);
+	void SendFrame(vector<Point4s> vertices, vector<RGB> RGB, vector<Body> body);
 
 	void SocketThreadFunction();
-	void StoreFrame(Point3f *vertices, Point2f *mapping, RGB *color, vector<Body> &bodies, BYTE* bodyIndex);
+	void StoreFrame( Point3f *prevVertices, BYTE* prevBodyIndex, Point3f *currentVertices, BYTE* currentBodyIndex, Point3f *nextVertices, BYTE* nextBodyIndex, Point2f *currentMapping, RGB *currentColor, vector<Body> &currentBodies );
 	void ShowFPS();
 	void ReadIPFromFile();
 	void WriteIPToFile();

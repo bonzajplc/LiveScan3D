@@ -56,7 +56,7 @@ void FrameFileWriterReader::openNewFileForWriting()
 	resetTimer();
 }
 
-bool FrameFileWriterReader::readFrame(std::vector<Point3s> &outPoints, std::vector<RGB> &outColors)
+bool FrameFileWriterReader::readFrame(std::vector<Point4s> &outPoints, std::vector<RGB> &outColors)
 {
 	if (!m_bFileOpenedForReading)
 		openCurrentFileForReading();
@@ -86,7 +86,7 @@ bool FrameFileWriterReader::readFrame(std::vector<Point3s> &outPoints, std::vect
 }
 
 
-void FrameFileWriterReader::writeFrame(std::vector<Point3s> points, std::vector<RGB> colors)
+void FrameFileWriterReader::writeFrame(std::vector<Point4s> points, std::vector<RGB> colors)
 {
 	if (!m_bFileOpenedForWriting)
 		openNewFileForWriting();

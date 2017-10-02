@@ -201,11 +201,11 @@ namespace KinectServer
 
             for (int i = 0; i < n_vertices; i++)
             {
-                for (int j = 0; j < 3; j++)
+                for (int j = 0; j < 4; j++)
                 {
                     lFrameRGB.Add(buffer[startIdx++]);
                 }
-                for (int j = 0; j < 3; j++)
+                for (int j = 0; j < 4; j++)
                 {
                     float val = BitConverter.ToInt16(buffer, startIdx);
                     //converting from milimeters to meters

@@ -194,3 +194,16 @@ FakesAssemblies/
 
 # Visual Studio 6 workspace options file
 *.opt
+bin/out/noname/00001.bnz
+*.ply
+*.bnz
+bin/ICP.exp
+bin/ICP.iobj
+bin/ICP.ipdb
+bin/LiveScanClient.iobj
+bin/LiveScanClient.ipdb
+bin/LiveScanPlayer.exe.config
+bin/LiveScanServer.exe.config
+bin/settings.bin
+*.bin
+LiveScanClient/lastIP.txt

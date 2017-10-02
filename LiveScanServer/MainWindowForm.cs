@@ -224,7 +224,9 @@ namespace KinectServer
                     if (!oSettings.bMergeScansForSave)
                     {
                         string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".ply";
-                        Utils.saveToPly(outputFilename, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], oSettings.bSaveAsBinaryPLY);                        
+                        Utils.saveToPly(outputFilename, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], oSettings.bSaveAsBinaryPLY);
+                        string outputFilenameBinary = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".bnz";
+                        Utils.saveToBinary(outputFilenameBinary, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i] );
                     }
                 }
 
@@ -233,6 +235,8 @@ namespace KinectServer
                 {
                     string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + ".ply";
                     Utils.saveToPly(outputFilename, lFrameVerts, lFrameRGB, oSettings.bSaveAsBinaryPLY);
+                    string outputFilenameBinary = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + ".bnz";
+                    Utils.saveToBinary(outputFilenameBinary, lFrameVerts, lFrameRGB);
                 }
             }
         }

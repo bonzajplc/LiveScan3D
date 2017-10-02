@@ -22,29 +22,31 @@ ICapture::ICapture()
 	nColorFrameWidth = 0;
 	nDepthFrameHeight = 0;
 	nDepthFrameWidth = 0;
-
-	pDepth = NULL;
-	pColorRGBX = NULL;
-	pBodyIndex = NULL;
 }
 
 ICapture::~ICapture()
 {
-	if (pDepth != NULL)
+	if( p_next_Depth != NULL )
 	{
-		delete[] pDepth;
-		pDepth = NULL;
+		delete[] p_next_Depth;
+		p_next_Depth = NULL;
 	}
 
-	if (pColorRGBX != NULL)
+	if (p_current_ColorRGBX != NULL)
 	{
-		delete[] pColorRGBX;
-		pColorRGBX = NULL;
+		delete[] p_current_ColorRGBX;
+		p_current_ColorRGBX = NULL;
 	}
 
-	if (pBodyIndex != NULL)
+	if( p_next_ColorRGBX != NULL )
 	{
-		delete[] pBodyIndex;
-		pBodyIndex = NULL;
+		delete[] p_next_ColorRGBX;
+		p_next_ColorRGBX = NULL;
+	}
+
+	if (p_current_BodyIndex != NULL)
+	{
+		delete[] p_current_BodyIndex;
+		p_current_BodyIndex = NULL;
 	}
 }

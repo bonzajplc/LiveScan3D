@@ -48,8 +48,15 @@ public:
 	int nColorFrameHeight, nColorFrameWidth;
 	int nDepthFrameHeight, nDepthFrameWidth;
 
-	UINT16 *pDepth;
-	BYTE *pBodyIndex;
-	RGB *pColorRGBX;
-	std::vector<Body> vBodies;
+	UINT16 *p_next_Depth = NULL;
+
+	BYTE *p_prev_BodyIndex = NULL;
+	BYTE *p_current_BodyIndex = NULL;
+	BYTE *p_next_BodyIndex = NULL;
+	
+	RGB *p_current_ColorRGBX = NULL;
+	RGB *p_next_ColorRGBX = NULL;
+
+	std::vector<Body> v_current_Bodies;
+	std::vector<Body> v_next_Bodies;
 };

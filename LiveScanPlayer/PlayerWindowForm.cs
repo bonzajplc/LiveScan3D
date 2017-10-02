@@ -232,6 +232,8 @@ namespace LiveScanPlayer
             }
             string outputFilename = outDir + frameIdx.ToString().PadLeft(5, '0') + ".ply";
             Utils.saveToPly(outputFilename, lVertices, lColors, true);
+            string outputFilenameBinary = outDir + frameIdx.ToString().PadLeft(5, '0') + ".bnz";
+            Utils.saveToBinary(outputFilename, lVertices, lColors);
         }
     }
 }

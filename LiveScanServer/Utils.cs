@@ -164,7 +164,7 @@ namespace KinectServer
     {
         public static void saveToPly(string filename, List<Single> vertices, List<byte> colors, bool binary)
         {
-            int nVertices = vertices.Count / 3;
+            int nVertices = vertices.Count / 4;
 
             FileStream fileStream = File.Open(filename, FileMode.Create);
 
@@ -183,31 +183,60 @@ namespace KinectServer
             //Vertex and color data are written here.
             if (binary)
             {
-                for (int j = 0; j < vertices.Count / 3; j++)
+                for (int j = 0; j < vertices.Count / 4; j++)
                 {
                     for (int k = 0; k < 3; k++)
-                        binaryWriter.Write(vertices[j * 3 + k]);
+                        binaryWriter.Write(vertices[j * 4 + k]);
                     for (int k = 0; k < 3; k++)
                     {
-                        byte temp = colors[j * 3 + k];
+                        byte temp = colors[j * 4 + k];
                         binaryWriter.Write(temp);
                     }
                 }
             }
             else
             {
-                for (int j = 0; j < vertices.Count / 3; j++)
+                for (int j = 0; j < vertices.Count / 4; j++)
                 {
                     string s = "";
                     for (int k = 0; k < 3; k++)
-                        s += vertices[j * 3 + k].ToString(CultureInfo.InvariantCulture) + " ";
+                        s += vertices[j * 4 + k].ToString(CultureInfo.InvariantCulture) + " ";
                     for (int k = 0; k < 3; k++)
-                        s += colors[j * 3 + k].ToString(CultureInfo.InvariantCulture) + " ";
+                        s += colors[j * 4 + k].ToString(CultureInfo.InvariantCulture) + " ";
                     streamWriter.WriteLine(s);
                 }
             }
             streamWriter.Flush();
             binaryWriter.Flush();
+            fileStream.Close();
+        }
+
+        public static void saveToBinary(string filename, List<Single> vertices, List<byte> colors)
+        {
+            short[] sVertices = Array.ConvertAll(vertices.ToArray(), x => (short)(x * 1000));
+            int nVertices = vertices.Count / 4;
+
+            MemoryStream ms = new MemoryStream();
+            System.IO.BinaryWriter binaryWriter = new System.IO.BinaryWriter(ms);
+
+            //Vertex and color data are written here.
+            for (int j = 0; j < nVertices; j++)
+            {
+                for (int k = 0; k < 4; k++)
+                    binaryWriter.Write(sVertices[j * 4 + k]);
+
+                for (int k = 0; k < 4; k++)
+                    binaryWriter.Write(colors[j * 4 + k]);
+            }
+
+            binaryWriter.Flush();
+            byte[] outBytes = ZSTDCompressor.Compress(ms.ToArray());
+
+            FileStream fileStream = File.Open(filename, FileMode.Create);
+            System.IO.BinaryWriter bw = new System.IO.BinaryWriter(fileStream);
+            bw.Write(outBytes, 0, outBytes.Length);
+
+            bw.Flush();
             fileStream.Close();
         }
     }

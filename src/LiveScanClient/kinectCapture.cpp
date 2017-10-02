@@ -106,22 +106,22 @@ bool KinectCapture::AcquireFrame()
 
 void KinectCapture::MapDepthFrameToCameraSpace(Point3f *pCameraSpacePoints)
 {
-	pCoordinateMapper->MapDepthFrameToCameraSpace(nDepthFrameWidth * nDepthFrameHeight, pDepth, nDepthFrameWidth * nDepthFrameHeight, (CameraSpacePoint*)pCameraSpacePoints);
+	pCoordinateMapper->MapDepthFrameToCameraSpace(nDepthFrameWidth * nDepthFrameHeight, p_next_Depth, nDepthFrameWidth * nDepthFrameHeight, (CameraSpacePoint*)pCameraSpacePoints);
 }
 
 void KinectCapture::MapColorFrameToCameraSpace(Point3f *pCameraSpacePoints)
 {
-	pCoordinateMapper->MapColorFrameToCameraSpace(nDepthFrameWidth * nDepthFrameHeight, pDepth, nColorFrameWidth * nColorFrameHeight, (CameraSpacePoint*)pCameraSpacePoints);
+	pCoordinateMapper->MapColorFrameToCameraSpace(nDepthFrameWidth * nDepthFrameHeight, p_next_Depth, nColorFrameWidth * nColorFrameHeight, (CameraSpacePoint*)pCameraSpacePoints);
 }
 
 void KinectCapture::MapDepthFrameToColorSpace(Point2f *pColorSpacePoints)
 {
-	pCoordinateMapper->MapDepthFrameToColorSpace(nDepthFrameWidth * nDepthFrameHeight, pDepth, nDepthFrameWidth * nDepthFrameHeight, (ColorSpacePoint*)pColorSpacePoints);
+	pCoordinateMapper->MapDepthFrameToColorSpace(nDepthFrameWidth * nDepthFrameHeight, p_next_Depth, nDepthFrameWidth * nDepthFrameHeight, (ColorSpacePoint*)pColorSpacePoints);
 }
 
 void KinectCapture::MapColorFrameToDepthSpace(Point2f *pDepthSpacePoints)
 {
-	pCoordinateMapper->MapColorFrameToDepthSpace(nDepthFrameWidth * nDepthFrameHeight, pDepth, nColorFrameWidth * nColorFrameHeight, (DepthSpacePoint*)pDepthSpacePoints);;
+	pCoordinateMapper->MapColorFrameToDepthSpace(nDepthFrameWidth * nDepthFrameHeight, p_next_Depth, nColorFrameWidth * nColorFrameHeight, (DepthSpacePoint*)pDepthSpacePoints);;
 }
 
 void KinectCapture::GetDepthFrame(IMultiSourceFrame* pMultiFrame)
@@ -133,18 +133,20 @@ void KinectCapture::GetDepthFrame(IMultiSourceFrame* pMultiFrame)
 
 	if (SUCCEEDED(hr))
 	{
-		if (pDepth == NULL)
+		if (p_next_Depth == NULL)
 		{
 			IFrameDescription* pFrameDescription = NULL;
 			hr = pDepthFrame->get_FrameDescription(&pFrameDescription);
 			pFrameDescription->get_Width(&nDepthFrameWidth);
 			pFrameDescription->get_Height(&nDepthFrameHeight);
-			pDepth = new UINT16[nDepthFrameHeight * nDepthFrameWidth];
+			p_next_Depth = new UINT16[nDepthFrameHeight * nDepthFrameWidth];
 			SafeRelease(pFrameDescription);
 		}
 
+		//copy 
+
 		UINT nBufferSize = nDepthFrameHeight * nDepthFrameWidth;
-		hr = pDepthFrame->CopyFrameDataToArray(nBufferSize, pDepth);
+		hr = pDepthFrame->CopyFrameDataToArray(nBufferSize, p_next_Depth );
 	}
 
 	SafeRelease(pDepthFrame);
@@ -160,18 +162,32 @@ void KinectCapture::GetColorFrame(IMultiSourceFrame* pMultiFrame)
 
 	if (SUCCEEDED(hr))
 	{
-		if (pColorRGBX == NULL)
+		if (p_next_ColorRGBX == NULL)
 		{
 			IFrameDescription* pFrameDescription = NULL;
 			hr = pColorFrame->get_FrameDescription(&pFrameDescription);
 			hr = pFrameDescription->get_Width(&nColorFrameWidth);
 			hr = pFrameDescription->get_Height(&nColorFrameHeight);
-			pColorRGBX = new RGB[nColorFrameWidth * nColorFrameHeight];
+			p_next_ColorRGBX = new RGB[nColorFrameWidth * nColorFrameHeight];
 			SafeRelease(pFrameDescription);
 		}
 
+		//copy next color frame to current
+
+		if( p_current_ColorRGBX == NULL )
+		{
+			IFrameDescription* pFrameDescription = NULL;
+			hr = pColorFrame->get_FrameDescription( &pFrameDescription );
+			hr = pFrameDescription->get_Width( &nColorFrameWidth );
+			hr = pFrameDescription->get_Height( &nColorFrameHeight );
+			p_current_ColorRGBX = new RGB[nColorFrameWidth * nColorFrameHeight];
+			SafeRelease( pFrameDescription );
+		}
+
+		memcpy( p_current_ColorRGBX, p_next_ColorRGBX, nColorFrameWidth * nColorFrameHeight * sizeof( RGB ) );
+
 		UINT nBufferSize = nColorFrameWidth * nColorFrameHeight * sizeof(RGB);
-		hr = pColorFrame->CopyConvertedFrameDataToArray(nBufferSize, reinterpret_cast<BYTE*>(pColorRGBX), ColorImageFormat_Bgra);
+		hr = pColorFrame->CopyConvertedFrameDataToArray(nBufferSize, reinterpret_cast<BYTE*>(p_next_ColorRGBX), ColorImageFormat_Bgra);
 	}
 
 	SafeRelease(pColorFrame);
@@ -191,7 +207,10 @@ void KinectCapture::GetBodyFrame(IMultiSourceFrame* pMultiFrame)
 		IBody* bodies[BODY_COUNT] = { NULL };
 		pBodyFrame->GetAndRefreshBodyData(BODY_COUNT, bodies);
 
-		vBodies = std::vector<Body>(BODY_COUNT);
+		//copy from next to current
+		v_current_Bodies = v_next_Bodies;
+
+		v_next_Bodies = std::vector<Body>(BODY_COUNT);
 		for (int i = 0; i < BODY_COUNT; i++)
 		{		
 			if (bodies[i])
@@ -202,21 +221,21 @@ void KinectCapture::GetBodyFrame(IMultiSourceFrame* pMultiFrame)
 				bodies[i]->get_IsTracked(&isTracked);
 				bodies[i]->GetJoints(JointType_Count, joints);
 
-				vBodies[i].vJoints.assign(joints, joints + JointType_Count);
+				v_next_Bodies[i].vJoints.assign(joints, joints + JointType_Count);
 
 				if (isTracked == TRUE)
-					vBodies[i].bTracked = true;
+					v_next_Bodies[i].bTracked = true;
 				else
-					vBodies[i].bTracked = false;
+					v_next_Bodies[i].bTracked = false;
 
-				vBodies[i].vJointsInColorSpace.resize(JointType_Count);
+				v_next_Bodies[i].vJointsInColorSpace.resize(JointType_Count);
 
 				for (int j = 0; j < JointType_Count; j++)
 				{
 					ColorSpacePoint tempPoint;
 					pCoordinateMapper->MapCameraPointToColorSpace(joints[j].Position, &tempPoint);
-					vBodies[i].vJointsInColorSpace[j].X = tempPoint.X;
-					vBodies[i].vJointsInColorSpace[j].Y = tempPoint.Y;
+					v_next_Bodies[i].vJointsInColorSpace[j].X = tempPoint.X;
+					v_next_Bodies[i].vJointsInColorSpace[j].Y = tempPoint.Y;
 				}
 			}
 		}
@@ -236,13 +255,27 @@ void KinectCapture::GetBodyIndexFrame(IMultiSourceFrame* pMultiFrame)
 
 	if (SUCCEEDED(hr))
 	{
-		if (pBodyIndex == NULL)
+		if( p_prev_BodyIndex == NULL )
 		{
-			pBodyIndex = new BYTE[nDepthFrameHeight * nDepthFrameWidth];
+			p_prev_BodyIndex = new BYTE[nDepthFrameHeight * nDepthFrameWidth];
+		}
+		if( p_current_BodyIndex == NULL )
+		{
+			p_current_BodyIndex = new BYTE[nDepthFrameHeight * nDepthFrameWidth];
+		}
+		if (p_next_BodyIndex == NULL)
+		{
+			p_next_BodyIndex = new BYTE[nDepthFrameHeight * nDepthFrameWidth];
 		}
 
+		//copy current to prev
+		memcpy( p_prev_BodyIndex, p_current_BodyIndex, nDepthFrameHeight * nDepthFrameWidth );
+
+		//copy next to current
+		memcpy( p_current_BodyIndex, p_next_BodyIndex, nDepthFrameHeight * nDepthFrameWidth );
+
 		UINT nBufferSize = nDepthFrameHeight * nDepthFrameWidth;
-		hr = pBodyIndexFrame->CopyFrameDataToArray(nBufferSize, pBodyIndex);
+		hr = pBodyIndexFrame->CopyFrameDataToArray(nBufferSize, p_next_BodyIndex );
 	}
 
 	SafeRelease(pBodyIndexFrame);

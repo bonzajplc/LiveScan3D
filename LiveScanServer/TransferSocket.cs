@@ -52,14 +52,14 @@ namespace KinectServer
             short[] sVertices = Array.ConvertAll(vertices.ToArray(), x => (short)(x * 1000));
 
             
-            int nVerticesToSend = vertices.Count / 3;
-            byte[] buffer = new byte[sizeof(short) * 3 * nVerticesToSend];
-            Buffer.BlockCopy(sVertices, 0, buffer, 0, sizeof(short) * 3 * nVerticesToSend);
+            int nVerticesToSend = vertices.Count / 4;
+            byte[] buffer = new byte[sizeof(short) * 4 * nVerticesToSend];
+            Buffer.BlockCopy(sVertices, 0, buffer, 0, sizeof(short) * 4 * nVerticesToSend);
             try
             {                 
                 WriteInt(nVerticesToSend);                               
                 oSocket.GetStream().Write(buffer, 0, buffer.Length);
-                oSocket.GetStream().Write(colors.ToArray(), 0, sizeof(byte) * 3 * nVerticesToSend);
+                oSocket.GetStream().Write(colors.ToArray(), 0, sizeof(byte) * 4 * nVerticesToSend);
             }
             catch (Exception ex)
             {

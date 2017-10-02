@@ -38,4 +38,35 @@ namespace KinectServer
             return outArray;
         }
     }
+
+    static class ZSTDCompressor
+    {
+        private const string dllName = "libzstd.dll";
+
+        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern size_t ZSTD_compressBound(size_t srcSize);
+
+        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern size_t ZSTD_compress(IntPtr dst, size_t dstSize,
+            IntPtr src, size_t srcSize);
+
+        public static byte[] Compress(byte[] array)
+        {
+            int size = array.Count();
+            IntPtr ptr = Marshal.AllocHGlobal(size);
+            Marshal.Copy(array, 0, ptr, size);
+
+            int cBuffSize = (int)ZSTD_compressBound((size_t)size) * 2;
+
+            IntPtr outPtr = Marshal.AllocHGlobal(cBuffSize);
+            int outSize = (int)ZSTD_compress(outPtr, (size_t)cBuffSize, ptr, (size_t)size);
+
+            byte[] outArray = new byte[outSize];
+            Marshal.Copy(outPtr, outArray, 0, outSize);
+
+            Marshal.FreeHGlobal(ptr);
+            Marshal.FreeHGlobal(outPtr);
+            return outArray;
+        }
+    }
 }
