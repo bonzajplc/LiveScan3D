@@ -207,3 +207,5 @@ bin/LiveScanServer.exe.config
 bin/settings.bin
 *.bin
 LiveScanClient/lastIP.txt
+bin/lastIP.txt
+LiveScan.VC.db

@@ -720,10 +720,10 @@ void LiveScanClient::SendFrame(vector<Point4s> vertices, vector<RGB> RGB, vector
 	m_pClientSocket->SendBytes(buffer.data(), size);
 }
 
-#define STATE_LINEAR	1 // --
-#define STATE_FADEIN	2 // /-
-#define STATE_FADEINOUT 3 // /\  
-#define STATE_FADEOUT   4 // -\
+#define STATE_LINEAR	0 // --
+#define STATE_FADEIN	75 // /-
+#define STATE_FADEOUT   150 // -\ 
+#define STATE_FADEINOUT 200 // /\  
 
 
 void LiveScanClient::StoreFrame( Point3f *prevVertices, BYTE* prevBodyIndex, Point3f *currentVertices, BYTE* currentBodyIndex, Point3f *nextVertices, BYTE* nextBodyIndex, Point2f *currentMapping, RGB *currentColor, vector<Body> &currentBodies )
@@ -748,9 +748,9 @@ void LiveScanClient::StoreFrame( Point3f *prevVertices, BYTE* prevBodyIndex, Poi
 				state = STATE_FADEIN; //appears in this frame
 			else if( prevBodyIndex[vertexIndex] == 255 && nextBodyIndex[vertexIndex] == 255 )
 			{
+				state = STATE_FADEINOUT;
 				//point appears for one frame
 				continue; //discard
-				//state = STATE_FADEINOUT;
 			}
 			else if( prevBodyIndex[vertexIndex] != 255 && nextBodyIndex[vertexIndex] == 255 )
 				state = STATE_FADEOUT; //will disappear next frame
@@ -758,26 +758,30 @@ void LiveScanClient::StoreFrame( Point3f *prevVertices, BYTE* prevBodyIndex, Poi
 
 		if ( currentVertices[vertexIndex].Z >= 0 && currentMapping[vertexIndex].Y >= 0 && currentMapping[vertexIndex].Y < pCapture->nColorFrameHeight)
 		{
-			float velocity = 1.0f;
 			Point3f temp = currentVertices[vertexIndex];
+			Point3f tempNext = nextVertices[vertexIndex];
+			float tempSquareLength = temp.X * temp.X + temp.Y * temp.Y + temp.Z * temp.Z;
+			float tempNextSquareLength = tempNext.X * tempNext.X + tempNext.Y * tempNext.Y + tempNext.Z * tempNext.Z;
+			float positionRatio = sqrt( tempNextSquareLength ) / sqrt( tempSquareLength );
+			positionRatio *= 10.0f; //for better compression inside 16 bit integer
 
 			RGB tempColor = currentColor[(int)currentMapping[vertexIndex].X + (int)currentMapping[vertexIndex].Y * pCapture->nColorFrameWidth];
 			tempColor.rgbState = state;
 
-			if (calibration.bCalibrated)
-			{
-				temp.X += calibration.worldT[0];
-				temp.Y += calibration.worldT[1];
-				temp.Z += calibration.worldT[2];
-				temp = RotatePoint(temp, calibration.worldR);
+			//if (calibration.bCalibrated)
+			//{
+			//	temp.X += calibration.worldT[0];
+			//	temp.Y += calibration.worldT[1];
+			//	temp.Z += calibration.worldT[2];
+			//	temp = RotatePoint(temp, calibration.worldR);
 
-				if (temp.X < m_vBounds[0] || temp.X > m_vBounds[3]
-					|| temp.Y < m_vBounds[1] || temp.Y > m_vBounds[4]
-					|| temp.Z < m_vBounds[2] || temp.Z > m_vBounds[5])
-					continue;
-			}
+			//	if (temp.X < m_vBounds[0] || temp.X > m_vBounds[3]
+			//		|| temp.Y < m_vBounds[1] || temp.Y > m_vBounds[4]
+			//		|| temp.Z < m_vBounds[2] || temp.Z > m_vBounds[5])
+			//		continue;
+			//}
 
-			goodVertices.push_back( Point4f( temp, velocity ) );
+			goodVertices.push_back( Point4f( temp, positionRatio ) );
 			goodColorPoints.push_back(tempColor);
 		}
 	}

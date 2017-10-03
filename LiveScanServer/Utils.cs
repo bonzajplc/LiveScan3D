@@ -219,12 +219,16 @@ namespace KinectServer
             MemoryStream ms = new MemoryStream();
             System.IO.BinaryWriter binaryWriter = new System.IO.BinaryWriter(ms);
 
-            //Vertex and color data are written here.
+            //Vertex data is written first.
             for (int j = 0; j < nVertices; j++)
             {
                 for (int k = 0; k < 4; k++)
                     binaryWriter.Write(sVertices[j * 4 + k]);
+            }
 
+            //Vertex data is written second.
+            for (int j = 0; j < nVertices; j++)
+            {
                 for (int k = 0; k < 4; k++)
                     binaryWriter.Write(colors[j * 4 + k]);
             }
