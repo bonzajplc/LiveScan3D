@@ -16,12 +16,11 @@ public:
 	// leave filename blank if you want the filename to be generated from the date
 	void setCurrentFilename(std::string filename = ""); 
 
-	void writeFrame(std::vector<Point4s> points, std::vector<RGB> colors);
-	bool readFrame(std::vector<Point4s> &outPoints, std::vector<RGB> &outColors);
+	void writeFrame(std::vector<Point3s> points, std::vector<Point2s> normals, std::vector<Point2s> uvs, std::vector<RGB> colors, std::vector<unsigned short> indices );
+	bool readFrame(std::vector<Point3s> &outPoints, std::vector<Point2s> &outNormals, std::vector<Point2s> &outUVs, std::vector<RGB> &outColors, std::vector<unsigned short> &outIndices );
 
 	bool openedForWriting() { return m_bFileOpenedForWriting; }
 	bool openedForReading() { return m_bFileOpenedForReading; }
-
 
 	void closeFileIfOpened();
 

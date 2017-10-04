@@ -100,12 +100,6 @@ LiveScanClient::~LiveScanClient()
 		m_pDepthRGBX = NULL;
 	}
 
-	if ( m_prev_pCameraSpaceCoordinates )
-	{
-		delete[] m_prev_pCameraSpaceCoordinates;
-		m_prev_pCameraSpaceCoordinates = NULL;
-	}
-
 	if( m_current_pCameraSpaceCoordinates )
 	{
 		delete[] m_current_pCameraSpaceCoordinates;
@@ -120,8 +114,8 @@ LiveScanClient::~LiveScanClient()
 
 	if( m_next_pCameraSpaceCoordinates )
 	{
-		delete[] m_prev_pCameraSpaceCoordinates;
-		m_prev_pCameraSpaceCoordinates = NULL;
+		delete[] m_next_pCameraSpaceCoordinates;
+		m_next_pCameraSpaceCoordinates = NULL;
 	}
 
 	if( m_next_pColorCoordinatesOfDepth )
@@ -209,9 +203,6 @@ void LiveScanClient::UpdateFrame()
 		return;
 	}
 
-	//copy current to prev
-	memcpy( m_prev_pCameraSpaceCoordinates, m_current_pCameraSpaceCoordinates, sizeof( Point3f ) * pCapture->nDepthFrameWidth * pCapture->nDepthFrameHeight );
-
 	//copy next to current
 	memcpy( m_current_pCameraSpaceCoordinates, m_next_pCameraSpaceCoordinates, sizeof( Point3f ) * pCapture->nDepthFrameWidth * pCapture->nDepthFrameHeight );
 	memcpy( m_current_pColorCoordinatesOfDepth, m_next_pColorCoordinatesOfDepth, sizeof( Point2f ) * pCapture->nDepthFrameWidth * pCapture->nDepthFrameHeight );
@@ -227,12 +218,12 @@ void LiveScanClient::UpdateFrame()
 
 	{
 		std::lock_guard<std::mutex> lock(m_mSocketThreadMutex);
-		StoreFrame( m_prev_pCameraSpaceCoordinates, pCapture->p_prev_BodyIndex, m_current_pCameraSpaceCoordinates, pCapture->p_current_BodyIndex, m_next_pCameraSpaceCoordinates, pCapture->p_next_BodyIndex,
+		StoreFrame( pCapture->p_prev_BodyIndex, m_current_pCameraSpaceCoordinates, pCapture->p_current_BodyIndex, pCapture->p_next_BodyIndex,
 					m_current_pColorCoordinatesOfDepth, pCapture->p_current_ColorRGBX, pCapture->v_current_Bodies );
 
 		if (m_bCaptureFrame)
 		{
-			m_framesFileWriterReader.writeFrame(m_vLastFrameVertices, m_vLastFrameRGB);
+			m_framesFileWriterReader.writeFrame( m_vLastFrameVertices, m_vLastFrameNormals, m_vLastFrameUVs, m_vLastFrameRGB, m_vLastFrameIndices );
 			m_bConfirmCaptured = true;
 			m_bCaptureFrame = false;
 		}
@@ -306,8 +297,6 @@ LRESULT CALLBACK LiveScanClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 			{
 				m_pDepthRGBX = new RGB[pCapture->nColorFrameWidth * pCapture->nColorFrameHeight];
 				
-				m_prev_pCameraSpaceCoordinates = new Point3f[pCapture->nDepthFrameWidth * pCapture->nDepthFrameHeight];
-
 				m_current_pCameraSpaceCoordinates = new Point3f[pCapture->nDepthFrameWidth * pCapture->nDepthFrameHeight];
 				m_current_pColorCoordinatesOfDepth = new Point2f[pCapture->nDepthFrameWidth * pCapture->nDepthFrameHeight];
 
@@ -554,15 +543,18 @@ void LiveScanClient::HandleSocket()
 			byteToSend = MSG_STORED_FRAME;
 			m_pClientSocket->SendBytes(&byteToSend, 1);
 
-			vector<Point4s> points;
-			vector<RGB> colors; 
-			bool res = m_framesFileWriterReader.readFrame(points, colors);
-			if (res == false)
+			vector<Point3s> points;
+			vector<Point2s> normals;
+			vector<Point2s> uvs;
+			vector<unsigned short> indices;
+			vector<RGB> colors;
+			bool res = m_framesFileWriterReader.readFrame( points, normals, uvs, colors, indices );
+			if( res == false )
 			{
 				int size = -1;
 				m_pClientSocket->SendBytes((char*)&size, 4);
 			} else
-				SendFrame(points, colors, m_vLastFrameBody);
+				SendFrame( points, normals, uvs, colors, indices, m_vLastFrameBody );
 		}
 		//send last frame
 		else if (received[i] == MSG_REQUEST_LAST_FRAME)
@@ -570,7 +562,7 @@ void LiveScanClient::HandleSocket()
 			byteToSend = MSG_LAST_FRAME;
 			m_pClientSocket->SendBytes(&byteToSend, 1);
 
-			SendFrame(m_vLastFrameVertices, m_vLastFrameRGB, m_vLastFrameBody);
+			SendFrame(m_vLastFrameVertices, m_vLastFrameNormals, m_vLastFrameUVs, m_vLastFrameRGB, m_vLastFrameIndices, m_vLastFrameBody);
 		}
 		//receive calibration data
 		else if (received[i] == MSG_RECEIVE_CALIBRATION)
@@ -629,12 +621,14 @@ void LiveScanClient::HandleSocket()
 	}
 }
 
-void LiveScanClient::SendFrame(vector<Point4s> vertices, vector<RGB> RGB, vector<Body> body)
+void LiveScanClient::SendFrame(vector<Point3s> vertices, vector<Point2s> normals, vector<Point2s> uvs, vector<RGB> RGB, vector<unsigned short> indices, vector<Body> body)
 {
-	int size = RGB.size() * (4 + 4 * sizeof(short)) + sizeof(int);
+	int size = RGB.size() * ( 4 * sizeof( BYTE ) + 3 * sizeof( short ) + 2 * sizeof( short ) + 2 * sizeof( short ) ) + sizeof( int );
 
 	vector<char> buffer(size);
-	char *ptr2 = (char*)vertices.data();
+	char *ptrVert = (char*)vertices.data();
+	char *ptrNorm = (char*)normals.data();
+	char *ptrUV = (char*)vertices.data();
 	int pos = 0;
 
 	int nVertices = RGB.size();
@@ -648,11 +642,24 @@ void LiveScanClient::SendFrame(vector<Point4s> vertices, vector<RGB> RGB, vector
 		buffer[pos++] = RGB[i].rgbBlue;
 		buffer[pos++] = RGB[i].rgbState;
 
-		memcpy(buffer.data() + pos, ptr2, sizeof(short)* 4);
-		ptr2 += sizeof(short) * 4;
-		pos += sizeof(short) * 4;
+		memcpy( buffer.data() + pos, ptrVert, sizeof( short ) * 3 );
+		ptrVert += sizeof(short) * 3;
+		pos += sizeof(short) * 3;
+
+		memcpy( buffer.data() + pos, ptrNorm, sizeof( short ) * 2 );
+		ptrNorm += sizeof( short ) * 2;
+		pos += sizeof( short ) * 2;
+
+		memcpy( buffer.data() + pos, ptrUV, sizeof( short ) * 2 );
+		ptrUV += sizeof( short ) * 2;
+		pos += sizeof( short ) * 2;
 	}
-	
+
+	size += indices.size() * sizeof( unsigned short );
+	buffer.resize( size );
+	memcpy( buffer.data() + pos, indices.data(), sizeof( unsigned short ) * indices.size() );
+	pos += sizeof( unsigned short ) * indices.size();
+
 	int nBodies = body.size();
 	size += sizeof(nBodies);
 	for (int i = 0; i < nBodies; i++)
@@ -726,9 +733,11 @@ void LiveScanClient::SendFrame(vector<Point4s> vertices, vector<RGB> RGB, vector
 #define STATE_FADEINOUT 200 // /\  
 
 
-void LiveScanClient::StoreFrame( Point3f *prevVertices, BYTE* prevBodyIndex, Point3f *currentVertices, BYTE* currentBodyIndex, Point3f *nextVertices, BYTE* nextBodyIndex, Point2f *currentMapping, RGB *currentColor, vector<Body> &currentBodies )
+void LiveScanClient::StoreFrame( BYTE* prevBodyIndex, Point3f *currentVertices, BYTE* currentBodyIndex, BYTE* nextBodyIndex, Point2f *currentMapping, RGB *currentColor, vector<Body> &currentBodies )
 {
-	std::vector<Point4f> goodVertices;
+	std::vector<Point3f> goodVertices;
+	std::vector<Point3f> goodNormals;
+	std::vector<Point2f> goodUVs;
 	std::vector<RGB> goodColorPoints;
 
 	unsigned int nVertices = pCapture->nDepthFrameWidth * pCapture->nDepthFrameHeight;
@@ -758,15 +767,6 @@ void LiveScanClient::StoreFrame( Point3f *prevVertices, BYTE* prevBodyIndex, Poi
 
 		if ( currentVertices[vertexIndex].Z >= 0 && currentMapping[vertexIndex].Y >= 0 && currentMapping[vertexIndex].Y < pCapture->nColorFrameHeight)
 		{
-			Point3f temp = currentVertices[vertexIndex];
-			Point3f tempNext = nextVertices[vertexIndex];
-			float tempSquareLength = temp.X * temp.X + temp.Y * temp.Y + temp.Z * temp.Z;
-			float tempNextSquareLength = tempNext.X * tempNext.X + tempNext.Y * tempNext.Y + tempNext.Z * tempNext.Z;
-			float positionRatio = 1.0f;
-
-			if( tempSquareLength > 0.0f && nextBodyIndex[vertexIndex] != 255 && nextVertices[vertexIndex].Z > 0.0f )
-				positionRatio = sqrt( tempNextSquareLength ) / sqrt( tempSquareLength );
-
 			RGB tempColor = currentColor[(int)currentMapping[vertexIndex].X + (int)currentMapping[vertexIndex].Y * pCapture->nColorFrameWidth];
 			tempColor.rgbState = state;
 
@@ -783,7 +783,12 @@ void LiveScanClient::StoreFrame( Point3f *prevVertices, BYTE* prevBodyIndex, Poi
 			//		continue;
 			//}
 
-			goodVertices.push_back( Point4f( temp, positionRatio ) );
+			//calculate normal and uvs
+
+			goodUVs.push_back( Point2f( currentMapping[vertexIndex].X / pCapture->nColorFrameWidth, currentMapping[vertexIndex].Y / pCapture->nColorFrameHeight ) );
+			goodNormals.push_back( Point3f( 0.0f, 1.0f, 0.0f ) );
+
+			goodVertices.push_back( currentVertices[vertexIndex] );
 			goodColorPoints.push_back(tempColor);
 		}
 	}
@@ -812,17 +817,29 @@ void LiveScanClient::StoreFrame( Point3f *prevVertices, BYTE* prevBodyIndex, Poi
 	}
 	
 	if (m_bFilter)
-		filter(goodVertices, goodColorPoints, m_nFilterNeighbors, m_fFilterThreshold);
+		filter(goodVertices, goodNormals, goodUVs, goodColorPoints, m_nFilterNeighbors, m_fFilterThreshold);
 
-	vector<Point4s> goodVerticesShort(goodVertices.size());
+	vector<Point3s> goodVerticesShort(goodVertices.size());
+	vector<Point2s> goodNormalsShort( goodVertices.size() );
+	vector<Point2s> goodUVsShort( goodVertices.size() );
 
 	for (unsigned int i = 0; i < goodVertices.size(); i++)
 	{
 		goodVerticesShort[i] = goodVertices[i];
+
+		Point2f normal;
+		normal.X = goodNormals[i].X;
+		normal.Y = goodNormals[i].Y;
+
+		goodNormalsShort[i] = Point2s( normal, 30000.0f );
+
+		goodUVsShort[i] = Point2s( goodUVs[i], 30000.0f );
 	}
 
 	m_vLastFrameBody = tempBodies;
 	m_vLastFrameVertices = goodVerticesShort;
+	m_vLastFrameNormals = goodNormalsShort;
+	m_vLastFrameUVs = goodUVsShort;
 	m_vLastFrameRGB = goodColorPoints;
 }
 

@@ -62,8 +62,11 @@ private:
 	SocketClient *m_pClientSocket;
 	std::vector<float> m_vBounds;
 
-	std::vector<Point4s> m_vLastFrameVertices;
+	std::vector<Point3s> m_vLastFrameVertices;
+	std::vector<Point2s> m_vLastFrameNormals;
+	std::vector<Point2s> m_vLastFrameUVs;
 	std::vector<RGB> m_vLastFrameRGB;
+	std::vector<unsigned short> m_vLastFrameIndices;
 	std::vector<Body> m_vLastFrameBody;
 
 	HWND m_hWnd;
@@ -71,8 +74,6 @@ private:
     double m_fFreq;
     INT64 m_nNextStatusTime;
     DWORD m_nFramesSinceUpdate;	
-
-	Point3f* m_prev_pCameraSpaceCoordinates = NULL;
 
 	Point3f* m_current_pCameraSpaceCoordinates = NULL;
 	Point2f* m_current_pColorCoordinatesOfDepth = NULL;
@@ -93,10 +94,10 @@ private:
     bool SetStatusMessage(_In_z_ WCHAR* szMessage, DWORD nShowTimeMsec, bool bForce);
 
 	void HandleSocket();
-	void SendFrame(vector<Point4s> vertices, vector<RGB> RGB, vector<Body> body);
+	void SendFrame(vector<Point3s> vertices, vector<Point2s> normals, vector<Point2s> uvs, vector<RGB> RGB, vector<unsigned short> indices, vector<Body> body);
 
 	void SocketThreadFunction();
-	void StoreFrame( Point3f *prevVertices, BYTE* prevBodyIndex, Point3f *currentVertices, BYTE* currentBodyIndex, Point3f *nextVertices, BYTE* nextBodyIndex, Point2f *currentMapping, RGB *currentColor, vector<Body> &currentBodies );
+	void StoreFrame( BYTE* prevBodyIndex, Point3f *currentVertices, BYTE* currentBodyIndex, BYTE* nextBodyIndex, Point2f *currentMapping, RGB *currentColor, vector<Body> &currentBodies );
 	void ShowFPS();
 	void ReadIPFromFile();
 	void WriteIPToFile();

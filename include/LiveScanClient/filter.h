@@ -28,7 +28,7 @@ struct KNNeighborsResult
 
 struct PointCloud
 {
-	std::vector<Point4f> pts;
+	std::vector<Point3f> pts;
 
 	// Must return the number of data points
 	inline size_t kdtree_get_point_count() const { return pts.size(); }
@@ -59,4 +59,4 @@ struct PointCloud
 
 typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<float, PointCloud>, PointCloud, 3> kdTree;
 
-void filter(std::vector<Point4f> &vertices, std::vector<RGB> &colors, int k = 10, float maxDist = 0.01);
+void filter(std::vector<Point3f> &vertices, std::vector<Point3f> &normals, std::vector<Point2f> &uvs, std::vector<RGB> &colors, int k = 10, float maxDist = 0.01);

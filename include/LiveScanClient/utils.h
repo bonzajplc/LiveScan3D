@@ -83,65 +83,6 @@ typedef struct Point3s
 	short Z;
 } Point3s;
 
-typedef struct Point4f
-{
-	Point4f()
-	{
-		this->X = 0;
-		this->Y = 0;
-		this->Z = 0;
-		this->V = 0;
-	}
-	Point4f( float X, float Y, float Z, float V )
-	{
-		this->X = X;
-		this->Y = Y;
-		this->Z = Z;
-		this->V = V;
-	}
-	Point4f( const Point3f &P, float V )
-	{
-		this->X = P.X;
-		this->Y = P.Y;
-		this->Z = P.Z;
-		this->V = V;
-	}
-	float X;
-	float Y;
-	float Z;
-	float V;
-} Point4f;
-
-typedef struct Point4s
-{
-	Point4s()
-	{
-		this->X = 0;
-		this->Y = 0;
-		this->Z = 0;
-		this->V = 0;
-	}
-	Point4s( short X, short Y, short Z, short V )
-	{
-		this->X = X;
-		this->Y = Y;
-		this->Z = Z;
-		this->V = V;
-	}
-	//meters to milimeters
-	Point4s( Point4f &other )
-	{
-		this->X = static_cast<short>( 1000 * other.X );
-		this->Y = static_cast<short>( 1000 * other.Y );
-		this->Z = static_cast<short>( 1000 * other.Z );
-		this->V = static_cast<short>( 1000 * other.V );
-	}
-	short X;
-	short Y;
-	short Z;
-	short V;
-} Point4s;
-
 typedef struct Point2f
 {
 	Point2f()
@@ -157,6 +98,28 @@ typedef struct Point2f
 	float X;
 	float Y;
 } Point2f;
+
+typedef struct Point2s
+{
+	Point2s()
+	{
+		this->X = 0;
+		this->Y = 0;
+	}
+	Point2s( short X, short Y )
+	{
+		this->X = X;
+		this->Y = Y;
+	}
+	//meters to milimeters
+	Point2s( Point2f &other, float multiplier )
+	{
+		this->X = static_cast<short>( multiplier * other.X );
+		this->Y = static_cast<short>( multiplier * other.Y );
+	}
+	short X;
+	short Y;
+} Point2s;
 
 typedef struct RGB
 {

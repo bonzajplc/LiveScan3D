@@ -14,7 +14,10 @@ namespace KinectServer
     public class TransferServer
     {
         public List<float> lVertices = new List<float>();
+        public List<float> lNormals = new List<float>();
+        public List<float> lUVs = new List<float>();
         public List<byte> lColors = new List<byte>();
+        public List<ushort> lIndices = new List<ushort>();
 
         TcpListener oListener;
         List<TransferSocket> lClientSockets = new List<TransferSocket>();
@@ -110,7 +113,7 @@ namespace KinectServer
                             {
                                 lock (lVertices)
                                 {
-                                    lClientSockets[i].SendFrame(lVertices, lColors);
+                                    lClientSockets[i].SendFrame(lVertices, lNormals, lUVs, lColors, lIndices);
                                 }
                             }
 

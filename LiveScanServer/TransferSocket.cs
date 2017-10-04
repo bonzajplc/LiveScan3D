@@ -47,14 +47,15 @@ namespace KinectServer
             oSocket.GetStream().Write(BitConverter.GetBytes(val), 0, 4);
         }
 
-        public void SendFrame(List<float> vertices, List<byte> colors)
+        public void SendFrame(List<float> vertices, List<float> normals, List<float> uvs, List<byte> colors, List<ushort> indices)
         {
             short[] sVertices = Array.ConvertAll(vertices.ToArray(), x => (short)(x * 1000));
+            short[] sNormals = Array.ConvertAll(normals.ToArray(), x => (short)(x * 30000));
+            short[] sUVs = Array.ConvertAll(uvs.ToArray(), x => (short)(x * 30000));
 
-            
-            int nVerticesToSend = vertices.Count / 4;
-            byte[] buffer = new byte[sizeof(short) * 4 * nVerticesToSend];
-            Buffer.BlockCopy(sVertices, 0, buffer, 0, sizeof(short) * 4 * nVerticesToSend);
+            int nVerticesToSend = vertices.Count / 3;
+            byte[] buffer = new byte[sizeof(short) * ( 3 + 2 + 2 ) * nVerticesToSend];
+            Buffer.BlockCopy(sssVertices, 0, buffer, 0, sizeof(short) * 4 * nVerticesToSend);
             try
             {                 
                 WriteInt(nVerticesToSend);                               

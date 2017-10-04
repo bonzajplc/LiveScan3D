@@ -56,17 +56,21 @@ void FrameFileWriterReader::openNewFileForWriting()
 	resetTimer();
 }
 
-bool FrameFileWriterReader::readFrame(std::vector<Point4s> &outPoints, std::vector<RGB> &outColors)
+bool FrameFileWriterReader::readFrame( std::vector<Point3s> &outPoints, std::vector<Point2s> &outNormals, std::vector<Point2s> &outUVs, std::vector<RGB> &outColors, std::vector<unsigned short> &outIndices )
 {
 	if (!m_bFileOpenedForReading)
 		openCurrentFileForReading();
 
 	outPoints.clear();
+	outNormals.clear();
+	outUVs.clear();
 	outColors.clear();
+	outIndices.clear();
+
 	FILE *f = m_pFileHandle;
-	int nPoints, timestamp; 
+	int nPoints, nIndices, timestamp; 
 	char tmp[1024]; 
-	int nread = fscanf_s(f, "%s %d %s %d", tmp, 1024, &nPoints, tmp, 1024, &timestamp);
+	int nread = fscanf_s(f, "%s %d %s %d %s %d", tmp, 1024, &nPoints, tmp, 1024, &nIndices, tmp, 1024, &timestamp);
 
 	if (nread < 4)
 		return false;
@@ -76,29 +80,44 @@ bool FrameFileWriterReader::readFrame(std::vector<Point4s> &outPoints, std::vect
 
 	fgetc(f);		//  '\n'
 	outPoints.resize(nPoints);
+	outNormals.resize( nPoints );
+	outUVs.resize( nPoints );
 	outColors.resize(nPoints);
 
-	fread((void*)outPoints.data(), sizeof(outPoints[0]), nPoints, f);
-	fread((void*)outColors.data(), sizeof(outColors[0]), nPoints, f);
-	fgetc(f);		// '\n'
-	return true;
+	fread( (void*)outPoints.data(), sizeof( outPoints[0] ), nPoints, f );
+	fread( (void*)outNormals.data(), sizeof( outNormals[0] ), nPoints, f );
+	fread( (void*)outUVs.data(), sizeof( outUVs[0] ), nPoints, f );
+	fread( (void*)outColors.data(), sizeof( outColors[0] ), nPoints, f );
 
+	outIndices.resize( nIndices );
+	fread( (void*)outIndices.data(), sizeof( outIndices[0] ), nIndices, f );
+	fgetc(f);		// '\n'
+
+	return true;
 }
 
 
-void FrameFileWriterReader::writeFrame(std::vector<Point4s> points, std::vector<RGB> colors)
+void FrameFileWriterReader::writeFrame( std::vector<Point3s> points, std::vector<Point2s> normals, std::vector<Point2s> uvs, std::vector<RGB> colors, std::vector<unsigned short> indices )
 {
 	if (!m_bFileOpenedForWriting)
 		openNewFileForWriting();
 
 	FILE *f = m_pFileHandle;
 
-	int nPoints = static_cast<int>(points.size());
-	fprintf(f, "n_points= %d\nframe_timestamp= %d\n", nPoints, getRecordingTimeMilliseconds());
+	int nPoints = static_cast<int>( points.size() );
+	int nIndices = static_cast<int>( indices.size() );
+
+	fprintf(f, "n_points= %d\nn_indices= %d\nframe_timestamp= %d\n", nPoints, nIndices, getRecordingTimeMilliseconds());
 	if (nPoints > 0)
 	{
-		fwrite((void*)points.data(), sizeof(points[0]), nPoints, f);
-		fwrite((void*)colors.data(), sizeof(colors[0]), nPoints, f);
+		fwrite( (void*)points.data(), sizeof( points[0] ), nPoints, f );
+		fwrite( (void*)normals.data(), sizeof( normals[0] ), nPoints, f );
+		fwrite( (void*)uvs.data(), sizeof( uvs[0] ), nPoints, f );
+		fwrite( (void*)colors.data(), sizeof( colors[0] ), nPoints, f );
+	}
+	if( nIndices > 0 )
+	{
+		fwrite( (void*)indices.data(), sizeof( indices[0] ), nIndices, f );
 	}
 	fprintf(f, "\n");
 }

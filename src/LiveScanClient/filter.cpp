@@ -33,7 +33,7 @@ vector<KNNeighborsResult> KNNeighbors(PointCloud &cloud, kdTree &tree, int k)
 	return result;
 }
 
-void filter(std::vector<Point4f> &vertices, std::vector<RGB> &colors, int k, float maxDist)
+void filter(std::vector<Point3f> &vertices, std::vector<Point3f> &normals, std::vector<Point2f> &uvs, std::vector<RGB> &colors, int k, float maxDist)
 {
 	if (k <= 0 || maxDist <= 0)
 		return;
@@ -65,6 +65,8 @@ void filter(std::vector<Point4f> &vertices, std::vector<RGB> &colors, int k, flo
 			continue;
 		}
 		vertices[lastElemIdx] = vertices[i];
+		normals[lastElemIdx] = normals[i];
+		uvs[lastElemIdx] = uvs[i];
 		colors[lastElemIdx] = colors[i];
 
 		lastElemIdx++;
