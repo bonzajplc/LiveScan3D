@@ -648,6 +648,9 @@ void LiveScanClient::SendFrame(vector<Point4s> vertices, vector<RGB> RGB, vector
 		buffer[pos++] = RGB[i].rgbBlue;
 		buffer[pos++] = RGB[i].rgbState;
 
+		if( ( (short*)ptr2 )[3] == 0 )
+			(( short* )ptr2)[3] = ((short*)ptr2)[3];
+
 		memcpy(buffer.data() + pos, ptr2, sizeof(short)* 4);
 		ptr2 += sizeof(short) * 4;
 		pos += sizeof(short) * 4;
