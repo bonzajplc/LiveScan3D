@@ -28,7 +28,9 @@
     <ClInclude Include="..\include\LiveScanClient\kinectCapture.h" />
     <ClInclude Include="..\include\LiveScanClient\liveScanClient.h" />
     <ClInclude Include="..\include\LiveScanClient\marker.h" />
+    <ClInclude Include="..\include\LiveScanClient\TypesAndUtils.h" />
     <ClInclude Include="..\include\LiveScanClient\utils.h" />
+    <ClInclude Include="..\include\LiveScanClient\VectorFloat.h" />
     <ClInclude Include="..\include\nanoflann.h" />
     <ClInclude Include="..\include\socketCS.h" />
     <ClInclude Include="resource.h" />

@@ -56,8 +56,8 @@ namespace KinectServer
             int nVerticesToSend = vertices.Count / 3;
             byte[] buffer = new byte[sizeof(short) * ( 3 + 2 + 2 ) * nVerticesToSend];
             Buffer.BlockCopy(sVertices, 0, buffer, 0, sizeof(short) * 3 * nVerticesToSend);
-            Buffer.BlockCopy(sNormals, 0, buffer, sizeof(short) * 3 * nVerticesToSend, sizeof(short) * 2 * nVerticesToSend);
-            Buffer.BlockCopy(sUVs, 0, buffer, sizeof(short) * ( 3 + 2 ) * nVerticesToSend, sizeof(short) * 2 * nVerticesToSend);
+            Buffer.BlockCopy(sNormals, 0, buffer, sizeof(short) * 3 * nVerticesToSend, sizeof(short) * 3 * nVerticesToSend);
+            Buffer.BlockCopy(sUVs, 0, buffer, sizeof(short) * ( 3 + 3 ) * nVerticesToSend, sizeof(short) * 2 * nVerticesToSend);
 
             int nIndicesToSend = indices.Count;
             byte[] indexBuffer = new byte[sizeof(short) * nIndicesToSend];

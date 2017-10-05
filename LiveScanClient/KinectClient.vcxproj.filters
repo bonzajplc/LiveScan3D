@@ -57,6 +57,12 @@
     <ClInclude Include="..\include\LiveScanClient\frameFileWriterReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\LiveScanClient\VectorFloat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\LiveScanClient\TypesAndUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\socketCS.cpp">

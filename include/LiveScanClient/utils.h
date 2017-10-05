@@ -72,11 +72,11 @@ typedef struct Point3s
 		this->Z = Z;
 	}
 	//meters to milimeters
-	Point3s( Point3f &other )
+	Point3s( Point3f &other, float multiplier )
 	{
-		this->X = static_cast<short>( 1000 * other.X );
-		this->Y = static_cast<short>( 1000 * other.Y );
-		this->Z = static_cast<short>( 1000 * other.Z );
+		this->X = static_cast<short>( multiplier * other.X );
+		this->Y = static_cast<short>( multiplier * other.Y );
+		this->Z = static_cast<short>( multiplier * other.Z );
 	}
 	short X;
 	short Y;

@@ -20,6 +20,7 @@
 #include <strsafe.h>
 #include <fstream>
 #include "zstd.h"
+#include "VectorFloat.h"
 
 std::mutex m_mSocketThreadMutex;
 
@@ -544,7 +545,7 @@ void LiveScanClient::HandleSocket()
 			m_pClientSocket->SendBytes(&byteToSend, 1);
 
 			vector<Point3s> points;
-			vector<Point2s> normals;
+			vector<Point3s> normals;
 			vector<Point2s> uvs;
 			vector<unsigned short> indices;
 			vector<RGB> colors;
@@ -621,9 +622,9 @@ void LiveScanClient::HandleSocket()
 	}
 }
 
-void LiveScanClient::SendFrame(vector<Point3s> vertices, vector<Point2s> normals, vector<Point2s> uvs, vector<RGB> RGB, vector<unsigned short> indices, vector<Body> body)
+void LiveScanClient::SendFrame(vector<Point3s> vertices, vector<Point3s> normals, vector<Point2s> uvs, vector<RGB> RGB, vector<unsigned short> indices, vector<Body> body)
 {
-	int size = RGB.size() * ( 4 * sizeof( BYTE ) + 3 * sizeof( short ) + 2 * sizeof( short ) + 2 * sizeof( short ) ) + sizeof( int );
+	int size = RGB.size() * ( 4 * sizeof( BYTE ) + 3 * sizeof( short ) + 3 * sizeof( short ) + 2 * sizeof( short ) ) + sizeof( int );
 
 	vector<char> buffer(size);
 	char *ptrVert = (char*)vertices.data();
@@ -646,9 +647,9 @@ void LiveScanClient::SendFrame(vector<Point3s> vertices, vector<Point2s> normals
 		ptrVert += sizeof(short) * 3;
 		pos += sizeof(short) * 3;
 
-		memcpy( buffer.data() + pos, ptrNorm, sizeof( short ) * 2 );
-		ptrNorm += sizeof( short ) * 2;
-		pos += sizeof( short ) * 2;
+		memcpy( buffer.data() + pos, ptrNorm, sizeof( short ) * 3 );
+		ptrNorm += sizeof( short ) * 3;
+		pos += sizeof( short ) * 3;
 
 		memcpy( buffer.data() + pos, ptrUV, sizeof( short ) * 2 );
 		ptrUV += sizeof( short ) * 2;
@@ -789,9 +790,31 @@ void LiveScanClient::StoreFrame( BYTE* prevBodyIndex, Point3f *currentVertices, 
 			//}
 
 			//calculate normal and uvs
+			//right
+			int x = vertexIndex % pCapture->nDepthFrameWidth;
+			int y = vertexIndex / pCapture->nDepthFrameWidth;
+
+			Vec3F normal( currentVertices[vertexIndex].X, currentVertices[vertexIndex].Y, currentVertices[vertexIndex].Z );
+			normal = normalize( -normal );
+
+			if( x < pCapture->nDepthFrameWidth - 1 && y > 1 )
+			{
+				if( currentVertices[vertexIndex + 1].Z >= 0 && currentVertices[vertexIndex - pCapture->nDepthFrameWidth].Z >= 0 )
+				{
+					Vec3F current( currentVertices[vertexIndex].X, currentVertices[vertexIndex].Y, currentVertices[vertexIndex].Z );
+					Vec3F up( currentVertices[vertexIndex - pCapture->nDepthFrameWidth].X, currentVertices[vertexIndex - pCapture->nDepthFrameWidth].Y, currentVertices[vertexIndex - pCapture->nDepthFrameWidth].Z );
+					Vec3F right( currentVertices[vertexIndex + 1].X, currentVertices[vertexIndex + 1].Y, currentVertices[vertexIndex + 1].Z );
+
+					Vec3F v1 = up - current;
+					Vec3F v2 = right - current;
+
+					normal = cross( normalize( v1 ), normalize( v2 ) );
+				}
+			}
+			goodNormals.push_back( Point3f(normal.x, normal.y, normal.z) );
 
 			goodUVs.push_back( Point2f( currentMapping[vertexIndex].X / pCapture->nColorFrameWidth, currentMapping[vertexIndex].Y / pCapture->nColorFrameHeight ) );
-			goodNormals.push_back( Point3f( 0.0f, 1.0f, 0.0f ) );
+			
 
 			goodVertices.push_back( currentVertices[vertexIndex] );
 			goodColorPoints.push_back(tempColor);
@@ -825,18 +848,14 @@ void LiveScanClient::StoreFrame( BYTE* prevBodyIndex, Point3f *currentVertices, 
 		filter(goodVertices, goodNormals, goodUVs, goodColorPoints, m_nFilterNeighbors, m_fFilterThreshold);
 
 	vector<Point3s> goodVerticesShort(goodVertices.size());
-	vector<Point2s> goodNormalsShort( goodVertices.size() );
+	vector<Point3s> goodNormalsShort( goodVertices.size() );
 	vector<Point2s> goodUVsShort( goodVertices.size() );
 
 	for (unsigned int i = 0; i < goodVertices.size(); i++)
 	{
-		goodVerticesShort[i] = goodVertices[i];
+		goodVerticesShort[i] = Point3s( goodVertices[i], 1000.0f );
 
-		Point2f normal;
-		normal.X = goodNormals[i].X;
-		normal.Y = goodNormals[i].Y;
-
-		goodNormalsShort[i] = Point2s( normal, 30000.0f );
+		goodNormalsShort[i] = Point3s( goodNormals[i], 30000.0f );
 
 		goodUVsShort[i] = Point2s( goodUVs[i], 30000.0f );
 	}

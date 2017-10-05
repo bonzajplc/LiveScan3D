@@ -232,8 +232,8 @@ namespace KinectServer
             //Vertex normal is written now.
             for (int j = 0; j < nVertices; j++)
             {
-                for (int k = 0; k < 2; k++)
-                    binaryWriter.Write(normals[j * 2 + k]);
+                for (int k = 0; k < 3; k++)
+                    binaryWriter.Write(normals[j * 3 + k]);
             }
 
             //Vertex uv is written now.
