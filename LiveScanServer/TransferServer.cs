@@ -14,8 +14,8 @@ namespace KinectServer
     public class TransferServer
     {
         public List<float> lVertices = new List<float>();
-        public List<float> lNormals = new List<float>();
-        public List<float> lUVs = new List<float>();
+        public List<short> lNormals = new List<short>();
+        public List<short> lUVs = new List<short>();
         public List<byte> lColors = new List<byte>();
         public List<ushort> lIndices = new List<ushort>();
 

@@ -42,6 +42,9 @@ namespace KinectServer
 
         public List<byte> lFrameRGB = new List<byte>();
         public List<Single> lFrameVerts = new List<Single>();
+        public List<short> lFrameNormals = new List<short>();
+        public List<short> lFrameUVs = new List<short>();
+        public List<ushort> lFrameIndices = new List<ushort>();
         public List<Body> lBodies = new List<Body>(); 
 
         public event SocketChangedHandler eChanged;
@@ -152,6 +155,9 @@ namespace KinectServer
         {
             lFrameRGB.Clear();
             lFrameVerts.Clear();
+            lFrameNormals.Clear();
+            lFrameUVs.Clear();
+            lFrameIndices.Clear();
             lBodies.Clear();
 
             int nToRead;
@@ -205,7 +211,7 @@ namespace KinectServer
                 {
                     lFrameRGB.Add(buffer[startIdx++]);
                 }
-                for (int j = 0; j < 4; j++)
+                for (int j = 0; j < 3; j++)
                 {
                     float val = BitConverter.ToInt16(buffer, startIdx);
                     //converting from milimeters to meters
@@ -213,6 +219,28 @@ namespace KinectServer
                     lFrameVerts.Add(val);
                     startIdx += 2;
                 }
+                for (int j = 0; j < 2; j++)
+                {
+                    short val = BitConverter.ToInt16(buffer, startIdx);
+                    lFrameNormals.Add(val);
+                    startIdx += 2;
+                }
+                for (int j = 0; j < 2; j++)
+                {
+                    short val = BitConverter.ToInt16(buffer, startIdx);
+                    lFrameUVs.Add(val);
+                    startIdx += 2;
+                }
+            }
+
+            int n_indices = BitConverter.ToInt32(buffer, startIdx);
+            startIdx += 4;
+
+            for (int i = 0; i < n_indices; i++)
+            {
+                ushort val = BitConverter.ToUInt16(buffer, startIdx);
+                startIdx += 2;
+                lFrameIndices.Add(val);
             }
 
             //Receive body data

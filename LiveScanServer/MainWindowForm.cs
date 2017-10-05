@@ -47,6 +47,12 @@ namespace KinectServer
         //Those three variables are shared with the OpenGLWindow class and are used to exchange data with it.
         //Vertices from all of the sensors
         List<float> lAllVertices = new List<float>();
+        //Normals from all of the sensors
+        List<short> lAllNormals = new List<short>();
+        //UVs from all of the sensors
+        List<short> lAllUVs = new List<short>();
+        //Indices from all of the sensors
+        List<ushort> lAllIndices = new List<ushort>();
         //Color data from all of the sensors
         List<byte> lAllColors = new List<byte>();
         //Sensor poses from all of the sensors
@@ -85,6 +91,9 @@ namespace KinectServer
             oServer.eSocketListChanged += new SocketListChangedHandler(UpdateListView);
             oTransferServer = new TransferServer();
             oTransferServer.lVertices = lAllVertices;
+            oTransferServer.lNormals = lAllNormals;
+            oTransferServer.lUVs = lAllUVs;
+            oTransferServer.lIndices = lAllIndices;
             oTransferServer.lColors = lAllColors;
 
             InitializeComponent();
@@ -197,8 +206,11 @@ namespace KinectServer
             {
                 List<List<byte>> lFrameRGBAllDevices = new List<List<byte>>();
                 List<List<float>> lFrameVertsAllDevices = new List<List<float>>();
+                List<List<short>> lFrameNormalsAllDevices = new List<List<short>>();
+                List<List<short>> lFrameUVsAllDevices = new List<List<short>>();
+                List<List<ushort>> lFrameIndicesAllDevices = new List<List<ushort>>();
 
-                bool success = oServer.GetStoredFrame(lFrameRGBAllDevices, lFrameVertsAllDevices);
+                bool success = oServer.GetStoredFrame(lFrameRGBAllDevices, lFrameVertsAllDevices, lFrameNormalsAllDevices, lFrameUVsAllDevices, lFrameIndicesAllDevices);
 
                 //This indicates that there are no more stored frames.
                 if (!success)
@@ -213,12 +225,18 @@ namespace KinectServer
 
                 List<byte> lFrameRGB = new List<byte>();
                 List<Single> lFrameVerts = new List<Single>();
+                List<short> lFrameNormals = new List<short>();
+                List<short> lFrameUVs = new List<short>();
+                List<ushort> lFrameIndices = new List<ushort>();
 
                 SetStatusBarOnTimer("Saving frame " + (nFrames).ToString() + ".", 5000);
                 for (int i = 0; i < lFrameRGBAllDevices.Count; i++)
                 {                                 
                     lFrameRGB.AddRange(lFrameRGBAllDevices[i]);
                     lFrameVerts.AddRange(lFrameVertsAllDevices[i]);
+                    lFrameNormals.AddRange(lFrameNormalsAllDevices[i]);
+                    lFrameUVs.AddRange(lFrameUVsAllDevices[i]);
+                    lFrameIndices.AddRange(lFrameIndicesAllDevices[i]);
 
                     //This is ran if the frames from each client are to be placed in separate files.
                     if (!oSettings.bMergeScansForSave)
@@ -226,7 +244,7 @@ namespace KinectServer
                         string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".ply";
                         Utils.saveToPly(outputFilename, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], oSettings.bSaveAsBinaryPLY);
                         string outputFilenameBinary = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".bnz";
-                        Utils.saveToBinary(outputFilenameBinary, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i] );
+                        Utils.saveToBinary(outputFilenameBinary, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], lFrameNormalsAllDevices[i], lFrameUVsAllDevices[i], lFrameIndicesAllDevices[i] );
                     }
                 }
 
@@ -236,7 +254,7 @@ namespace KinectServer
                     string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + ".ply";
                     Utils.saveToPly(outputFilename, lFrameVerts, lFrameRGB, oSettings.bSaveAsBinaryPLY);
                     string outputFilenameBinary = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + ".bnz";
-                    Utils.saveToBinary(outputFilenameBinary, lFrameVerts, lFrameRGB);
+                    Utils.saveToBinary(outputFilenameBinary, lFrameVerts, lFrameRGB, lFrameNormals, lFrameUVs, lFrameIndices);
                 }
             }
         }
@@ -261,18 +279,24 @@ namespace KinectServer
         {
             List<List<byte>> lFramesRGB = new List<List<byte>>();
             List<List<Single>> lFramesVerts = new List<List<Single>>();
+            List<List<short>> lFramesNormals = new List<List<short>>();
+            List<List<short>> lFramesUVs = new List<List<short>>();
+            List<List<ushort>> lFramesIndices = new List<List<ushort>>();
             List<List<Body>> lFramesBody = new List<List<Body>>();
 
             BackgroundWorker worker = (BackgroundWorker)sender;
             while (!worker.CancellationPending)
             {
                 Thread.Sleep(1);
-                oServer.GetLatestFrame(lFramesRGB, lFramesVerts, lFramesBody);
+                oServer.GetLatestFrame(lFramesRGB, lFramesVerts, lFramesNormals, lFramesUVs, lFramesIndices, lFramesBody);
 
                 //Update the vertex and color lists that are common between this class and the OpenGLWindow.
                 lock (lAllVertices)
                 {
                     lAllVertices.Clear();
+                    lAllNormals.Clear();
+                    lAllUVs.Clear();
+                    lAllIndices.Clear();
                     lAllColors.Clear();
                     lAllBodies.Clear();
                     lAllCameraPoses.Clear();
@@ -280,6 +304,9 @@ namespace KinectServer
                     for (int i = 0; i < lFramesRGB.Count; i++)
                     {
                         lAllVertices.AddRange(lFramesVerts[i]);
+                        lAllNormals.AddRange(lFramesNormals[i]);
+                        lAllUVs.AddRange(lFramesUVs[i]);
+                        lAllIndices.AddRange(lFramesIndices[i]);
                         lAllColors.AddRange(lFramesRGB[i]);
                         lAllBodies.AddRange(lFramesBody[i]);                       
                     }
@@ -304,9 +331,12 @@ namespace KinectServer
 
             //Download a frame from each client.
             List<List<float>> lAllFrameVertices = new List<List<float>>();
+            List<List<short>> lAllFrameNormals = new List<List<short>>();
+            List<List<short>> lAllFrameUVs = new List<List<short>>();
+            List<List<ushort>> lAllFrameIndices = new List<List<ushort>>();
             List<List<byte>> lAllFrameColors = new List<List<byte>>();
             List<List<Body>> lAllFrameBody = new List<List<Body>>();
-            oServer.GetLatestFrame(lAllFrameColors, lAllFrameVertices, lAllFrameBody);
+            oServer.GetLatestFrame(lAllFrameColors, lAllFrameVertices, lAllFrameNormals, lAllFrameUVs, lAllFrameIndices, lAllFrameBody);
 
             //Initialize containers for the poses.
             List<float[]> Rs = new List<float[]>();

@@ -47,20 +47,28 @@ namespace KinectServer
             oSocket.GetStream().Write(BitConverter.GetBytes(val), 0, 4);
         }
 
-        public void SendFrame(List<float> vertices, List<float> normals, List<float> uvs, List<byte> colors, List<ushort> indices)
+        public void SendFrame(List<float> vertices, List<short> normals, List<short> uvs, List<byte> colors, List<ushort> indices)
         {
             short[] sVertices = Array.ConvertAll(vertices.ToArray(), x => (short)(x * 1000));
-            short[] sNormals = Array.ConvertAll(normals.ToArray(), x => (short)(x * 30000));
-            short[] sUVs = Array.ConvertAll(uvs.ToArray(), x => (short)(x * 30000));
+            short[] sNormals = normals.ToArray();
+            short[] sUVs = uvs.ToArray();
 
             int nVerticesToSend = vertices.Count / 3;
             byte[] buffer = new byte[sizeof(short) * ( 3 + 2 + 2 ) * nVerticesToSend];
-            Buffer.BlockCopy(sssVertices, 0, buffer, 0, sizeof(short) * 4 * nVerticesToSend);
+            Buffer.BlockCopy(sVertices, 0, buffer, 0, sizeof(short) * 3 * nVerticesToSend);
+            Buffer.BlockCopy(sNormals, 0, buffer, sizeof(short) * 3 * nVerticesToSend, sizeof(short) * 2 * nVerticesToSend);
+            Buffer.BlockCopy(sUVs, 0, buffer, sizeof(short) * ( 3 + 2 ) * nVerticesToSend, sizeof(short) * 2 * nVerticesToSend);
+
+            int nIndicesToSend = indices.Count;
+            byte[] indexBuffer = new byte[sizeof(short) * nIndicesToSend];
+            Buffer.BlockCopy(indices.ToArray(), 0, indexBuffer, 0, sizeof(short) * nIndicesToSend);
             try
             {                 
                 WriteInt(nVerticesToSend);                               
                 oSocket.GetStream().Write(buffer, 0, buffer.Length);
                 oSocket.GetStream().Write(colors.ToArray(), 0, sizeof(byte) * 4 * nVerticesToSend);
+                WriteInt(nIndicesToSend);
+                oSocket.GetStream().Write(indexBuffer, 0, indexBuffer.Length);
             }
             catch (Exception ex)
             {

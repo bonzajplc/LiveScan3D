@@ -223,6 +223,9 @@ namespace LiveScanPlayer
         private void SaveCurrentFrameToFile(string outDir, int frameIdx)
         {
             List<float> lVertices = new List<float>();
+            List<short> lNormals = new List<short>();
+            List<short> lUVs = new List<short>();
+            List<ushort> lIndices = new List<ushort>();
             List<byte> lColors = new List<byte>();
 
             lock (lAllVertices)
@@ -233,7 +236,7 @@ namespace LiveScanPlayer
             string outputFilename = outDir + frameIdx.ToString().PadLeft(5, '0') + ".ply";
             Utils.saveToPly(outputFilename, lVertices, lColors, true);
             string outputFilenameBinary = outDir + frameIdx.ToString().PadLeft(5, '0') + ".bnz";
-            Utils.saveToBinary(outputFilename, lVertices, lColors);
+            Utils.saveToBinary(outputFilename, lVertices, lColors, lNormals, lUVs, lIndices);
         }
     }
 }

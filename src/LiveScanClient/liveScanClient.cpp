@@ -655,8 +655,13 @@ void LiveScanClient::SendFrame(vector<Point3s> vertices, vector<Point2s> normals
 		pos += sizeof( short ) * 2;
 	}
 
-	size += indices.size() * sizeof( unsigned short );
+	size += sizeof( int ) + indices.size() * sizeof( unsigned short );
 	buffer.resize( size );
+
+	int nIndices = indices.size();
+	memcpy( buffer.data() + pos, &nIndices, sizeof( nIndices ) );
+	pos += sizeof( nIndices );
+
 	memcpy( buffer.data() + pos, indices.data(), sizeof( unsigned short ) * indices.size() );
 	pos += sizeof( unsigned short ) * indices.size();
 

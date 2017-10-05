@@ -232,12 +232,15 @@ namespace KinectServer
             }
         }
 
-        public bool GetStoredFrame(List<List<byte>> lFramesRGB, List<List<Single>> lFramesVerts)
+        public bool GetStoredFrame(List<List<byte>> lFramesRGB, List<List<Single>> lFramesVerts, List<List<short>> lFramesNormals, List<List<short>> lFramesUVs, List<List<ushort>> lFramesIndices)
         {
             bool bNoMoreStoredFrames;
             lFramesRGB.Clear();
             lFramesVerts.Clear();
-            
+            lFramesNormals.Clear();
+            lFramesUVs.Clear();
+            lFramesIndices.Clear();
+
             lock (oFrameRequestLock)
             {
                 //Request frames
@@ -276,6 +279,9 @@ namespace KinectServer
                     {
                         lFramesRGB.Add(new List<byte>(lClientSockets[i].lFrameRGB));
                         lFramesVerts.Add(new List<Single>(lClientSockets[i].lFrameVerts));
+                        lFramesNormals.Add(new List<short>(lClientSockets[i].lFrameNormals));
+                        lFramesUVs.Add(new List<short>(lClientSockets[i].lFrameUVs));
+                        lFramesIndices.Add(new List<ushort>(lClientSockets[i].lFrameIndices));
                     }
                 }
             }
@@ -286,10 +292,13 @@ namespace KinectServer
                 return true;
         }
 
-        public void GetLatestFrame(List<List<byte>> lFramesRGB, List<List<Single>> lFramesVerts, List<List<Body>> lFramesBody)
+        public void GetLatestFrame(List<List<byte>> lFramesRGB, List<List<Single>> lFramesVerts, List<List<short>> lFramesNormals, List<List<short>> lFramesUVs, List<List<ushort>> lFramesIndices, List<List<Body>> lFramesBody)
         {
             lFramesRGB.Clear();
             lFramesVerts.Clear();
+            lFramesNormals.Clear();
+            lFramesUVs.Clear();
+            lFramesIndices.Clear();
             lFramesBody.Clear();
 
             lock (oFrameRequestLock)
@@ -327,6 +336,9 @@ namespace KinectServer
                     {
                         lFramesRGB.Add(new List<byte>(lClientSockets[i].lFrameRGB));
                         lFramesVerts.Add(new List<Single>(lClientSockets[i].lFrameVerts));
+                        lFramesNormals.Add(new List<short>(lClientSockets[i].lFrameNormals));
+                        lFramesUVs.Add(new List<short>(lClientSockets[i].lFrameUVs));
+                        lFramesIndices.Add(new List<ushort>(lClientSockets[i].lFrameIndices));
                         lFramesBody.Add(new List<Body>(lClientSockets[i].lBodies));
                     }
                 }

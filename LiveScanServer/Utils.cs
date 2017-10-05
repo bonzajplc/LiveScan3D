@@ -164,7 +164,7 @@ namespace KinectServer
     {
         public static void saveToPly(string filename, List<Single> vertices, List<byte> colors, bool binary)
         {
-            int nVertices = vertices.Count / 4;
+            int nVertices = vertices.Count / 3;
 
             FileStream fileStream = File.Open(filename, FileMode.Create);
 
@@ -183,10 +183,10 @@ namespace KinectServer
             //Vertex and color data are written here.
             if (binary)
             {
-                for (int j = 0; j < vertices.Count / 4; j++)
+                for (int j = 0; j < nVertices; j++)
                 {
                     for (int k = 0; k < 3; k++)
-                        binaryWriter.Write(vertices[j * 4 + k]);
+                        binaryWriter.Write(vertices[j * 3 + k]);
                     for (int k = 0; k < 3; k++)
                     {
                         byte temp = colors[j * 4 + k];
@@ -196,11 +196,11 @@ namespace KinectServer
             }
             else
             {
-                for (int j = 0; j < vertices.Count / 4; j++)
+                for (int j = 0; j < nVertices; j++)
                 {
                     string s = "";
                     for (int k = 0; k < 3; k++)
-                        s += vertices[j * 4 + k].ToString(CultureInfo.InvariantCulture) + " ";
+                        s += vertices[j * 3 + k].ToString(CultureInfo.InvariantCulture) + " ";
                     for (int k = 0; k < 3; k++)
                         s += colors[j * 4 + k].ToString(CultureInfo.InvariantCulture) + " ";
                     streamWriter.WriteLine(s);
@@ -211,26 +211,53 @@ namespace KinectServer
             fileStream.Close();
         }
 
-        public static void saveToBinary(string filename, List<Single> vertices, List<byte> colors)
+        public static void saveToBinary(string filename, List<Single> vertices, List<byte> colors, List<short> normals, List<short> uvs, List<ushort> indices)
         {
             short[] sVertices = Array.ConvertAll(vertices.ToArray(), x => (short)(x * 1000));
-            int nVertices = vertices.Count / 4;
+            int nVertices = vertices.Count / 3;
 
             MemoryStream ms = new MemoryStream();
             System.IO.BinaryWriter binaryWriter = new System.IO.BinaryWriter(ms);
 
+            //number of vertices is written here
+            binaryWriter.Write(nVertices);
+
             //Vertex data is written first.
             for (int j = 0; j < nVertices; j++)
             {
-                for (int k = 0; k < 4; k++)
-                    binaryWriter.Write(sVertices[j * 4 + k]);
+                for (int k = 0; k < 3; k++)
+                    binaryWriter.Write(sVertices[j * 3 + k]);
             }
 
-            //Vertex data is written second.
+            //Vertex normal is written now.
+            for (int j = 0; j < nVertices; j++)
+            {
+                for (int k = 0; k < 2; k++)
+                    binaryWriter.Write(normals[j * 2 + k]);
+            }
+
+            //Vertex uv is written now.
+            for (int j = 0; j < nVertices; j++)
+            {
+                for (int k = 0; k < 2; k++)
+                    binaryWriter.Write(uvs[j * 2 + k]);
+            }
+
+            //Vertex color is written now.
             for (int j = 0; j < nVertices; j++)
             {
                 for (int k = 0; k < 4; k++)
                     binaryWriter.Write(colors[j * 4 + k]);
+            }
+
+            int nIndices = indices.Count;
+
+            //number of indices is written here
+            binaryWriter.Write(nIndices);
+
+            for (int j = 0; j < nIndices; j++)
+            {
+                binaryWriter.Write(indices[j]);
             }
 
             binaryWriter.Flush();
