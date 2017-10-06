@@ -81,6 +81,8 @@ private:
 	Point3f* m_next_pCameraSpaceCoordinates = NULL;
 	Point2f* m_next_pColorCoordinatesOfDepth = NULL;
 	Point2f* m_next_pDepthCoordinatesOfColor = NULL;
+
+	int *vertexIndexTable = NULL;
 	
 	// Direct2D
     ImageRenderer* m_pDrawColor;

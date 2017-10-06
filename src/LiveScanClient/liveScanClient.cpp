@@ -131,6 +131,12 @@ LiveScanClient::~LiveScanClient()
 		m_next_pDepthCoordinatesOfColor = NULL;
 	}
 
+	if( vertexIndexTable )
+	{
+		delete[] vertexIndexTable;
+		vertexIndexTable = NULL;
+	}
+
 	if (m_pClientSocket)
 	{
 		delete m_pClientSocket;
@@ -304,6 +310,8 @@ LRESULT CALLBACK LiveScanClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 				m_next_pCameraSpaceCoordinates = new Point3f[pCapture->nDepthFrameWidth * pCapture->nDepthFrameHeight];
 				m_next_pColorCoordinatesOfDepth = new Point2f[pCapture->nDepthFrameWidth * pCapture->nDepthFrameHeight];
 				m_next_pDepthCoordinatesOfColor = new Point2f[pCapture->nColorFrameWidth * pCapture->nColorFrameHeight];
+
+				vertexIndexTable = new int[pCapture->nDepthFrameWidth * pCapture->nDepthFrameHeight];
 			}
 			else
 			{
@@ -748,14 +756,16 @@ void LiveScanClient::StoreFrame( BYTE* prevBodyIndex, Point3f *currentVertices, 
 
 	unsigned int nVertices = pCapture->nDepthFrameWidth * pCapture->nDepthFrameHeight;
 
+	memset( vertexIndexTable, -1, nVertices * sizeof( int ) );
+
 	for (unsigned int vertexIndex = 0; vertexIndex < nVertices; vertexIndex++)
 	{
-		if( m_bStreamOnlyBodies && currentBodyIndex[vertexIndex] == 255 )
+		if( m_bStreamOnlyBodies && currentBodyIndex[vertexIndex] >= currentBodies.size() )
 			continue; //discard point
 
 		//determine the state point
 		unsigned char state = STATE_LINEAR;
-		if( m_bStreamOnlyBodies )
+/*		if( m_bStreamOnlyBodies )
 		{
 			if( prevBodyIndex[vertexIndex] != 255 && nextBodyIndex[vertexIndex] != 255 )
 				state = STATE_LINEAR;
@@ -769,7 +779,7 @@ void LiveScanClient::StoreFrame( BYTE* prevBodyIndex, Point3f *currentVertices, 
 			}
 			else if( prevBodyIndex[vertexIndex] != 255 && nextBodyIndex[vertexIndex] == 255 )
 				state = STATE_FADEOUT; //will disappear next frame
-		}
+		}*/
 
 		if ( currentVertices[vertexIndex].Z >= 0 && currentMapping[vertexIndex].Y >= 0 && currentMapping[vertexIndex].Y < pCapture->nColorFrameHeight)
 		{
@@ -815,9 +825,45 @@ void LiveScanClient::StoreFrame( BYTE* prevBodyIndex, Point3f *currentVertices, 
 
 			goodUVs.push_back( Point2f( currentMapping[vertexIndex].X / pCapture->nColorFrameWidth, currentMapping[vertexIndex].Y / pCapture->nColorFrameHeight ) );
 			
+			//writing index
+			if( goodVertices.size() <= 0xffff )
+				vertexIndexTable[vertexIndex] = goodVertices.size();
 
 			goodVertices.push_back( currentVertices[vertexIndex] );
 			goodColorPoints.push_back(tempColor);
+		}
+	}
+
+	//now build index table
+	m_vLastFrameIndices.clear();
+
+	for( unsigned int vertexIndex = 0; vertexIndex < nVertices; vertexIndex++ )
+	{
+		int i1 = vertexIndexTable[vertexIndex];
+		if( i1 != -1 )
+		{
+			int x = vertexIndex % pCapture->nDepthFrameWidth;
+			int y = vertexIndex / pCapture->nDepthFrameWidth;
+
+			if( x < pCapture->nDepthFrameWidth - 1 && y > 1 )
+			{
+				int i2 = vertexIndexTable[vertexIndex + 1];
+				int i3 = vertexIndexTable[vertexIndex - pCapture->nDepthFrameWidth];
+				int i4 = vertexIndexTable[vertexIndex + 1 - pCapture->nDepthFrameWidth];
+
+				if( i2 != -1 && i3 != -1 )
+				{
+					m_vLastFrameIndices.push_back( i1 );
+					m_vLastFrameIndices.push_back( i3 );
+					m_vLastFrameIndices.push_back( i2 );
+				}
+				if( i2 != -1 && i3 != -1 && i4 != -1 )
+				{
+					m_vLastFrameIndices.push_back( i2 );
+					m_vLastFrameIndices.push_back( i3 );
+					m_vLastFrameIndices.push_back( i4 );
+				}
+			}
 		}
 	}
 
@@ -844,8 +890,8 @@ void LiveScanClient::StoreFrame( BYTE* prevBodyIndex, Point3f *currentVertices, 
 		}
 	}
 	
-	if (m_bFilter)
-		filter(goodVertices, goodNormals, goodUVs, goodColorPoints, m_nFilterNeighbors, m_fFilterThreshold);
+	//if (m_bFilter)
+	//	filter(goodVertices, goodNormals, goodUVs, goodColorPoints, m_nFilterNeighbors, m_fFilterThreshold);
 
 	vector<Point3s> goodVerticesShort(goodVertices.size());
 	vector<Point3s> goodNormalsShort( goodVertices.size() );

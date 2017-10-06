@@ -219,7 +219,7 @@ namespace KinectServer
                     lFrameVerts.Add(val);
                     startIdx += 2;
                 }
-                for (int j = 0; j < 2; j++)
+                for (int j = 0; j < 3; j++)
                 {
                     short val = BitConverter.ToInt16(buffer, startIdx);
                     lFrameNormals.Add(val);

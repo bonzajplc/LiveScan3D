@@ -233,10 +233,10 @@ namespace LiveScanPlayer
                 lVertices.AddRange(lAllVertices);
                 lColors.AddRange(lAllColors);
             }
-            string outputFilename = outDir + frameIdx.ToString().PadLeft(5, '0') + ".ply";
-            Utils.saveToPly(outputFilename, lVertices, lColors, true);
+            //string outputFilename = outDir + frameIdx.ToString().PadLeft(5, '0') + ".ply";
+            //Utils.saveToPly(outputFilename, lVertices, lColors, true);
             string outputFilenameBinary = outDir + frameIdx.ToString().PadLeft(5, '0') + ".bnz";
-            Utils.saveToBinary(outputFilename, lVertices, lColors, lNormals, lUVs, lIndices);
+            Utils.saveToBinary(outputFilenameBinary, lVertices, lColors, lNormals, lUVs, lIndices);
         }
     }
 }

@@ -241,8 +241,8 @@ namespace KinectServer
                     //This is ran if the frames from each client are to be placed in separate files.
                     if (!oSettings.bMergeScansForSave)
                     {
-                        string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".ply";
-                        Utils.saveToPly(outputFilename, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], oSettings.bSaveAsBinaryPLY);
+                        //string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".ply";
+                        //Utils.saveToPly(outputFilename, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], oSettings.bSaveAsBinaryPLY);
                         string outputFilenameBinary = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".bnz";
                         Utils.saveToBinary(outputFilenameBinary, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], lFrameNormalsAllDevices[i], lFrameUVsAllDevices[i], lFrameIndicesAllDevices[i] );
                     }
@@ -251,8 +251,8 @@ namespace KinectServer
                 //This is ran if the frames from all clients are to be placed in a single file.
                 if (oSettings.bMergeScansForSave)
                 {
-                    string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + ".ply";
-                    Utils.saveToPly(outputFilename, lFrameVerts, lFrameRGB, oSettings.bSaveAsBinaryPLY);
+                    //string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + ".ply";
+                    //Utils.saveToPly(outputFilename, lFrameVerts, lFrameRGB, oSettings.bSaveAsBinaryPLY);
                     string outputFilenameBinary = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + ".bnz";
                     Utils.saveToBinary(outputFilenameBinary, lFrameVerts, lFrameRGB, lFrameNormals, lFrameUVs, lFrameIndices);
                 }
