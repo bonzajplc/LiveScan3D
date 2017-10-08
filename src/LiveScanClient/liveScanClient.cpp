@@ -558,12 +558,34 @@ void LiveScanClient::HandleSocket()
 			vector<unsigned short> indices;
 			vector<RGB> colors;
 			bool res = m_framesFileWriterReader.readFrame( points, normals, uvs, colors, indices );
+
 			if( res == false )
 			{
 				int size = -1;
 				m_pClientSocket->SendBytes((char*)&size, 4);
-			} else
+			}
+			else
+			{
+				if( m_bFilter )
+				{
+					vector<Point3f> pointsF( points.size() );
+
+					for( unsigned int i = 0; i < pointsF.size(); i++ )
+					{
+						pointsF[i].X = points[i].X / 1000.0f;
+						pointsF[i].Y = points[i].X / 1000.0f;
+						pointsF[i].Z = points[i].X / 1000.0f;
+					}
+					
+					medianFilter( pointsF, m_nFilterNeighbors, m_fFilterThreshold );
+
+					for( unsigned int i = 0; i < pointsF.size(); i++ )
+					{
+						points[i] = Point3s( pointsF[i], 1000.0f );
+					}
+				}
 				SendFrame( points, normals, uvs, colors, indices, m_vLastFrameBody );
+			}
 		}
 		//send last frame
 		else if (received[i] == MSG_REQUEST_LAST_FRAME)
@@ -891,7 +913,8 @@ void LiveScanClient::StoreFrame( BYTE* prevBodyIndex, Point3f *currentVertices, 
 	}
 	
 	//if (m_bFilter)
-	//	filter(goodVertices, goodNormals, goodUVs, goodColorPoints, m_nFilterNeighbors, m_fFilterThreshold);
+		//medianFilter(goodVertices, m_nFilterNeighbors, m_fFilterThreshold );
+		//filter(goodVertices, goodNormals, goodUVs, goodColorPoints, m_nFilterNeighbors, m_fFilterThreshold);
 
 	vector<Point3s> goodVerticesShort(goodVertices.size());
 	vector<Point3s> goodNormalsShort( goodVertices.size() );

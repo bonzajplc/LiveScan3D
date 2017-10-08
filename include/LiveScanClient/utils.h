@@ -38,6 +38,8 @@ enum OUTGOING_MESSAGE_TYPE
 	MSG_LAST_FRAME
 };
 
+struct Point3s;
+
 typedef struct Point3f
 {
 	Point3f()
@@ -52,6 +54,7 @@ typedef struct Point3f
 		this->Y = Y;
 		this->Z = Z;
 	}
+
 	float X;
 	float Y;
 	float Z;

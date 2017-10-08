@@ -13,6 +13,7 @@
 //        year={2015},
 //    }
 #include "filter.h"
+#include <set>
 
 using namespace std;
 
@@ -72,6 +73,37 @@ void filter(std::vector<Point3f> &vertices, std::vector<Point3f> &normals, std::
 		lastElemIdx++;
 	}
 
-	vertices.resize(lastElemIdx);
-	colors.resize(lastElemIdx);
+	vertices.resize( lastElemIdx );
+	colors.resize( lastElemIdx );
+	normals.resize( lastElemIdx );
+	uvs.resize( lastElemIdx );
+}
+
+void medianFilter( std::vector<Point3f> &vertices, int k, float maxDist )
+{
+	if( k <= 0 )
+		return;
+
+	PointCloud cloud;
+	cloud.pts = vertices;
+
+	kdTree tree( 3, cloud );
+	tree.buildIndex();
+
+	vector<KNNeighborsResult> knn = KNNeighbors( cloud, tree, k );
+
+	for( unsigned int i = 0; i < cloud.pts.size(); i++ )
+	{
+		set<float> medianList;
+
+		for( int j = 0; j < knn[i].neighbors.size(); j++ )
+		{
+			if( knn[i].distances[j] <= maxDist )
+				medianList.insert( vertices[knn[i].neighbors[j]].Z );
+		}
+
+		float median = *std::next( medianList.begin(), medianList.size()/2 );
+
+		vertices[i].Z = median;
+	}
 }
