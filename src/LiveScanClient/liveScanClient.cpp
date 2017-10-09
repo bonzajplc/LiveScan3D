@@ -661,7 +661,7 @@ void LiveScanClient::SendFrame(vector<Point3s> vertices, vector<Point3s> normals
 	vector<char> buffer(size);
 	char *ptrVert = (char*)vertices.data();
 	char *ptrNorm = (char*)normals.data();
-	char *ptrUV = (char*)vertices.data();
+	char *ptrUV = (char*)uvs.data();
 	int pos = 0;
 
 	int nVertices = RGB.size();

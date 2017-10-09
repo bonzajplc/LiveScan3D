@@ -120,22 +120,17 @@ void medianFilter( std::vector<Point3f> &vertices, std::vector<Point3f> &normals
 	//calculate normals
 	vector< uint8_t > normalCounter( vertices.size(), 0 );
 
-	auto calculateNormal = [&]( unsigned short ind0, unsigned short ind1, unsigned short ind2 )
+	auto calculateNormal = [&]( unsigned short ind, const Vec3F &normal )
 	{
-		Vec3F v1 = toVec3F( vertices[ind1] ) - toVec3F( vertices[ind0] );
-		Vec3F v2 = toVec3F( vertices[ind2] ) - toVec3F( vertices[ind0] );
-
-		Vec3F normal = cross( normalize( v1 ), normalize( v2 ) );
-
-		if( normalCounter[ind0] == 0 )
-			normals[ind0] = toPoint3f( normal );
+		if( normalCounter[ind] == 0 )
+			normals[ind] = toPoint3f( normal );
 		else
 		{
-			float lerpVal = 1.0f - (float)normalCounter[ind0] / (float)( normalCounter[ind0] + 1 );
-			normals[ind0] = toPoint3f( lerp( lerpVal, toVec3F( normals[ind0] ), normal ) );
+			float lerpVal = 1.0f - (float)normalCounter[ind] / (float)( normalCounter[ind] + 1 );
+			normals[ind] = toPoint3f( lerp( lerpVal, toVec3F( normals[ind] ), normal ) );
 		}
 
-		normalCounter[ind0]++;
+		normalCounter[ind]++;
 	};
 
 	for( int i = 0; i < indices.size(); i += 3 )
@@ -144,9 +139,14 @@ void medianFilter( std::vector<Point3f> &vertices, std::vector<Point3f> &normals
 		unsigned short ind1 = indices[i + 1];
 		unsigned short ind2 = indices[i + 2];
 
-		calculateNormal( ind0, ind1, ind2 );
-		//calculateNormal( ind1, ind0, ind2 );
-		//calculateNormal( ind2, ind1, ind0 );
+		Vec3F v1 = toVec3F( vertices[ind1] ) - toVec3F( vertices[ind0] );
+		Vec3F v2 = toVec3F( vertices[ind2] ) - toVec3F( vertices[ind0] );
+
+		Vec3F normal = cross( normalize( v1 ), normalize( v2 ) );
+
+		calculateNormal( ind0, normal );
+		calculateNormal( ind1, normal );
+		calculateNormal( ind2, normal );
 	}
 
 	for( int i = 0; i < normals.size(); i += 3 )
