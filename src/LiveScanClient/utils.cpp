@@ -35,3 +35,13 @@ Point3f InverseRotatePoint(Point3f &point, std::vector<std::vector<float>> &R)
 
 	return res;
 }
+
+Vec3F toVec3F( const Point3f &point )
+{
+	return Vec3F( point.X, point.Y, point.Z );
+}
+
+Point3f toPoint3f( const Vec3F &vec )
+{
+	return Point3f( vec.x, vec.y, vec.z );
+}

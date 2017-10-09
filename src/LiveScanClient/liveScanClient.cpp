@@ -569,19 +569,21 @@ void LiveScanClient::HandleSocket()
 				if( m_bFilter )
 				{
 					vector<Point3f> pointsF( points.size() );
+					vector<Point3f> normalsF( points.size() );
 
 					for( unsigned int i = 0; i < pointsF.size(); i++ )
 					{
 						pointsF[i].X = points[i].X / 1000.0f;
-						pointsF[i].Y = points[i].X / 1000.0f;
-						pointsF[i].Z = points[i].X / 1000.0f;
+						pointsF[i].Y = points[i].Y / 1000.0f;
+						pointsF[i].Z = points[i].Z / 1000.0f;
 					}
 					
-					medianFilter( pointsF, m_nFilterNeighbors, m_fFilterThreshold );
+					medianFilter( pointsF, normalsF, indices, m_nFilterNeighbors, m_fFilterThreshold );
 
 					for( unsigned int i = 0; i < pointsF.size(); i++ )
 					{
 						points[i] = Point3s( pointsF[i], 1000.0f );
+						normals[i] = Point3s( normalsF[i], 30000.0f );
 					}
 				}
 				SendFrame( points, normals, uvs, colors, indices, m_vLastFrameBody );
@@ -827,7 +829,7 @@ void LiveScanClient::StoreFrame( BYTE* prevBodyIndex, Point3f *currentVertices, 
 			int y = vertexIndex / pCapture->nDepthFrameWidth;
 
 			Vec3F normal( currentVertices[vertexIndex].X, currentVertices[vertexIndex].Y, currentVertices[vertexIndex].Z );
-			normal = normalize( -normal );
+			/*normal = normalize( -normal );
 
 			if( x < pCapture->nDepthFrameWidth - 1 && y > 1 )
 			{
@@ -842,7 +844,7 @@ void LiveScanClient::StoreFrame( BYTE* prevBodyIndex, Point3f *currentVertices, 
 
 					normal = cross( normalize( v1 ), normalize( v2 ) );
 				}
-			}
+			}*/
 			goodNormals.push_back( Point3f(normal.x, normal.y, normal.z) );
 
 			goodUVs.push_back( Point2f( currentMapping[vertexIndex].X / pCapture->nColorFrameWidth, currentMapping[vertexIndex].Y / pCapture->nColorFrameHeight ) );

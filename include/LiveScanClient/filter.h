@@ -60,4 +60,4 @@ struct PointCloud
 typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<float, PointCloud>, PointCloud, 3> kdTree;
 
 void filter(std::vector<Point3f> &vertices, std::vector<Point3f> &normals, std::vector<Point2f> &uvs, std::vector<RGB> &colors, int k = 10, float maxDist = 0.01);
-void medianFilter( std::vector<Point3f> &vertices, int k, float maxDist );
+void medianFilter( std::vector<Point3f> &vertices, std::vector<Point3f> &normals, std::vector<unsigned short> &indices, int k, float maxDist );

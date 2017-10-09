@@ -14,8 +14,11 @@
 //    }
 #include "filter.h"
 #include <set>
+#include "VectorFloat.h"
 
 using namespace std;
+
+
 
 vector<KNNeighborsResult> KNNeighbors(PointCloud &cloud, kdTree &tree, int k)
 {
@@ -79,7 +82,7 @@ void filter(std::vector<Point3f> &vertices, std::vector<Point3f> &normals, std::
 	uvs.resize( lastElemIdx );
 }
 
-void medianFilter( std::vector<Point3f> &vertices, int k, float maxDist )
+void medianFilter( std::vector<Point3f> &vertices, std::vector<Point3f> &normals, std::vector<unsigned short> &indices, int k, float maxDist )
 {
 	if( k <= 0 )
 		return;
@@ -95,15 +98,65 @@ void medianFilter( std::vector<Point3f> &vertices, int k, float maxDist )
 	for( unsigned int i = 0; i < cloud.pts.size(); i++ )
 	{
 		set<float> medianList;
+		float average = 0.0f;
+		int num = 0;
 
 		for( int j = 0; j < knn[i].neighbors.size(); j++ )
 		{
 			if( knn[i].distances[j] <= maxDist )
+			{
 				medianList.insert( vertices[knn[i].neighbors[j]].Z );
+				//average += vertices[knn[i].neighbors[j]].Z;
+				//num++;
+			}
 		}
 
-		float median = *std::next( medianList.begin(), medianList.size()/2 );
+		float median = *std::next( medianList.begin(), medianList.size() / 2 );
 
+		//if(num > 0 )
 		vertices[i].Z = median;
+	}
+
+	//calculate normals
+	vector< uint8_t > normalCounter( vertices.size(), 0 );
+
+	auto calculateNormal = [&]( unsigned short ind0, unsigned short ind1, unsigned short ind2 )
+	{
+		Vec3F v1 = toVec3F( vertices[ind1] ) - toVec3F( vertices[ind0] );
+		Vec3F v2 = toVec3F( vertices[ind2] ) - toVec3F( vertices[ind0] );
+
+		Vec3F normal = cross( normalize( v1 ), normalize( v2 ) );
+
+		if( normalCounter[ind0] == 0 )
+			normals[ind0] = toPoint3f( normal );
+		else
+		{
+			float lerpVal = 1.0f - (float)normalCounter[ind0] / (float)( normalCounter[ind0] + 1 );
+			normals[ind0] = toPoint3f( lerp( lerpVal, toVec3F( normals[ind0] ), normal ) );
+		}
+
+		normalCounter[ind0]++;
+	};
+
+	for( int i = 0; i < indices.size(); i += 3 )
+	{
+		unsigned short ind0 = indices[i + 0];
+		unsigned short ind1 = indices[i + 1];
+		unsigned short ind2 = indices[i + 2];
+
+		calculateNormal( ind0, ind1, ind2 );
+		//calculateNormal( ind1, ind0, ind2 );
+		//calculateNormal( ind2, ind1, ind0 );
+	}
+
+	for( int i = 0; i < normals.size(); i += 3 )
+	{
+		float lengthSquared = normals[i].X * normals[i].X + normals[i].Y * normals[i].Y + normals[i].Z * normals[i].Z;
+
+		if( lengthSquared > 0.0f )
+		{
+			float lengthRcp = 1.0f / sqrt( lengthSquared );
+			normals[i] = Point3f( normals[i].X * lengthRcp, normals[i].Y * lengthRcp, normals[i].Z * lengthRcp );
+		}
 	}
 }

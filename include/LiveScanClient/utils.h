@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 
+#include "VectorFloat.h"
+
 enum INCOMING_MESSAGE_TYPE
 {
 	MSG_CAPTURE_FRAME,
@@ -134,3 +136,5 @@ typedef struct RGB
 
 Point3f RotatePoint(Point3f &point, std::vector<std::vector<float>> &R);
 Point3f InverseRotatePoint(Point3f &point, std::vector<std::vector<float>> &R);
+Vec3F toVec3F( const Point3f &point );
+Point3f toPoint3f( const Vec3F &vec );
