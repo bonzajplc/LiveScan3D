@@ -162,9 +162,10 @@ namespace KinectServer
 
     public class Utils
     {
-        public static void saveToPly(string filename, List<Single> vertices, List<byte> colors, bool binary)
+        public static void saveToPly(string filename, List<Single> vertices, List<byte> colors, List<ushort> indices, bool binary)
         {
             int nVertices = vertices.Count / 3;
+            int nIndices = indices.Count / 3;
 
             FileStream fileStream = File.Open(filename, FileMode.Create);
 
@@ -175,14 +176,18 @@ namespace KinectServer
             if (binary)
                 streamWriter.WriteLine("ply\nformat binary_little_endian 1.0");
             else
-                streamWriter.WriteLine("ply\nformat ascii 1.0\n");
+                streamWriter.WriteLine("ply\nformat ascii 1.0");
+
             streamWriter.Write("element vertex " + nVertices.ToString() + "\n");
-            streamWriter.Write("property float x\nproperty float y\nproperty float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\nend_header\n");
-            streamWriter.Flush();
+            streamWriter.Write("property float x\nproperty float y\nproperty float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\n");
+            streamWriter.Write("element face " + nIndices.ToString() + "\n");
+            streamWriter.Write("property list uchar int vertex_indices\n");
+            streamWriter.Write("end_header\n");
 
             //Vertex and color data are written here.
             if (binary)
             {
+                streamWriter.Flush();
                 for (int j = 0; j < nVertices; j++)
                 {
                     for (int k = 0; k < 3; k++)
@@ -192,6 +197,12 @@ namespace KinectServer
                         byte temp = colors[j * 4 + k];
                         binaryWriter.Write(temp);
                     }
+                }
+                for (int j = 0; j < nIndices; j++)
+                {
+                    binaryWriter.Write(3);
+                    for (int k = 0; k < 3; k++)
+                        binaryWriter.Write((int)indices[j * 3 + k]);
                 }
             }
             else
@@ -205,7 +216,16 @@ namespace KinectServer
                         s += colors[j * 4 + k].ToString(CultureInfo.InvariantCulture) + " ";
                     streamWriter.WriteLine(s);
                 }
+                for (int j = 0; j < nIndices; j++)
+                {
+                    string s = "3 ";
+                    for (int k = 0; k < 3; k++)
+                        s += indices[j * 3 + k].ToString(CultureInfo.InvariantCulture) + " ";
+                    streamWriter.WriteLine(s);
+                }
             }
+
+
             streamWriter.Flush();
             binaryWriter.Flush();
             fileStream.Close();
