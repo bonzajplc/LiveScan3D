@@ -209,3 +209,4 @@ bin/settings.bin
 LiveScanClient/lastIP.txt
 bin/lastIP.txt
 LiveScan.VC.db
+*.bnzs

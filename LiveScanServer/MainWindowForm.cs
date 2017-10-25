@@ -241,20 +241,24 @@ namespace KinectServer
                     //This is ran if the frames from each client are to be placed in separate files.
                     if (!oSettings.bMergeScansForSave)
                     {
-                        string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".ply";
-                        Utils.saveToPly(outputFilename, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], lFrameIndicesAllDevices[i], oSettings.bSaveAsBinaryPLY);
-                        string outputFilenameBinary = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".bnz";
-                        Utils.saveToBinary(outputFilenameBinary, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], lFrameNormalsAllDevices[i], lFrameUVsAllDevices[i], lFrameIndicesAllDevices[i] );
+                        //string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".ply";
+                        //Utils.saveToPly(outputFilename, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], lFrameIndicesAllDevices[i], oSettings.bSaveAsBinaryPLY);
+                        //string outputFilenameBinary = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".bnz";
+                        //Utils.saveToBinary(outputFilenameBinary, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i], lFrameNormalsAllDevices[i], lFrameUVsAllDevices[i], lFrameIndicesAllDevices[i] );
+                        string outputFilenameBinarySimple = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + i.ToString() + ".bnzs";
+                        Utils.saveToSimpleBinary(outputFilenameBinarySimple, lFrameVertsAllDevices[i], lFrameRGBAllDevices[i]);
                     }
                 }
 
                 //This is ran if the frames from all clients are to be placed in a single file.
                 if (oSettings.bMergeScansForSave)
                 {
-                    string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + ".ply";
+/*                    string outputFilename = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + ".ply";
                     Utils.saveToPly(outputFilename, lFrameVerts, lFrameRGB, lFrameIndices, oSettings.bSaveAsBinaryPLY);
                     string outputFilenameBinary = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + ".bnz";
                     Utils.saveToBinary(outputFilenameBinary, lFrameVerts, lFrameRGB, lFrameNormals, lFrameUVs, lFrameIndices);
+  */                string outputFilenameBinarySimple = outDir + "\\" + nFrames.ToString().PadLeft(5, '0') + ".bnzs";
+                    Utils.saveToSimpleBinary(outputFilenameBinarySimple, lFrameVerts, lFrameRGB);
                 }
             }
         }

@@ -290,5 +290,41 @@ namespace KinectServer
             bw.Flush();
             fileStream.Close();
         }
+
+        public static void saveToSimpleBinary(string filename, List<Single> vertices, List<byte> colors)
+        {
+            short[] sVertices = Array.ConvertAll(vertices.ToArray(), x => (short)(x * 1000));
+            int nVertices = vertices.Count / 3;
+
+            MemoryStream ms = new MemoryStream();
+            System.IO.BinaryWriter binaryWriter = new System.IO.BinaryWriter(ms);
+
+            //number of vertices is written here
+            binaryWriter.Write(nVertices);
+
+            //Vertex data is written first.
+            for (int j = 0; j < nVertices; j++)
+            {
+                for (int k = 0; k < 3; k++)
+                    binaryWriter.Write(sVertices[j * 3 + k]);
+            }
+
+             //Vertex color is written now.
+            for (int j = 0; j < nVertices; j++)
+            {
+                for (int k = 0; k < 4; k++)
+                    binaryWriter.Write(colors[j * 4 + k]);
+            }
+
+             binaryWriter.Flush();
+            byte[] outBytes = ZSTDCompressor.Compress(ms.ToArray());
+
+            FileStream fileStream = File.Open(filename, FileMode.Create);
+            System.IO.BinaryWriter bw = new System.IO.BinaryWriter(fileStream);
+            bw.Write(outBytes, 0, outBytes.Length);
+
+            bw.Flush();
+            fileStream.Close();
+        }
     }
 }
